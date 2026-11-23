@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Callforus Prospect</title>
+<style>
+  body{width:300px;margin:0;font:13px/1.45 Montserrat,Arial,Helvetica,sans-serif;color:#0E0F12;background:#fff}
+  header{display:flex;align-items:center;gap:8px;padding:12px 14px;background:#0E0F12;color:#fff}
+  .logo{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:#FCCD10;color:#0E0F12;font-weight:800}
+  main{padding:12px 14px}
+  label{display:block;font-size:12px;color:#55585f;margin:8px 0 3px}
+  input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #cfcfcb;border-radius:7px;font-size:13px}
+  button{width:100%;margin-top:12px;padding:9px;border:0;border-radius:8px;background:#FCCD10;color:#0E0F12;font-weight:700;cursor:pointer;font-size:13px}
+  button.ghost{background:#f2f2ef}
+  .msg{margin-top:8px;font-size:12px;color:#b3261e;min-height:16px}
+  .row{display:flex;gap:8px}.row>div{flex:1}
+  .mute{color:#6B6E76;font-size:12px}
+  a{color:#0E0F12}
+  hr{border:0;border-top:1px solid #ececea;margin:14px 0 6px}
+</style>
+</head>
+<body>
+<header><span class="logo">C</span><b>Callforus</b> Prospect</header>
+<main>
+  <section id="login" hidden>
+    <p class="mute">Accedi con lo stesso account di Callforus Outbound.</p>
+    <form id="f">
+      <label for="em">Email</label><input id="em" type="email" autocomplete="username" required>
+      <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+      <button type="submit" id="go">Accedi</button>
+      <div class="msg" id="msg" role="status"></div>
+    </form>
+  </section>
+  <section id="in" hidden>
+    <p>Collegato come <b id="who"></b></p>
+    <p class="mute" id="allowed"></p>
+    <p><a id="app" href="#" target="_blank" rel="noopener">Apri Callforus Outbound</a></p>
+    <hr>
+    <b>Qualifica</b>
+    <label for="max">Brand per sessione</label><input id="max" type="number" min="1" max="100">
+    <div class="row">
+      <div><label for="pmin">Pausa minima (s)</label><input id="pmin" type="number" min="3" max="60"></div>
+      <div><label for="pmax">Pausa massima (s)</label><input id="pmax" type="number" min="3" max="120"></div>
+    </div>
+    <p class="mute">Volumi bassi e pause lunghe: Amazon non ama le letture automatiche e può chiedere il captcha.</p>
+    <button class="ghost" id="out">Esci</button>
+  </section>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

@@ -664,10 +664,38 @@ body.locked #gate{display:flex}
 .sec-switch button{padding:0 13px;gap:7px;font-size:14px}
 .topnav-in{max-width:1480px}
 @media(max-width:1599px) and (min-width:1181px){.sec-switch button[aria-pressed="false"]>span:not(.dotb){display:none}.sec-switch button[aria-pressed="false"]{padding:0 12px}.on-lbl{display:none}}
-</style>
+/* ---------- Prospect Amazon ---------- */
+body[data-view="prospect"] .hero{--hb:#FCCD10;--hi:#0E0F12}
+.pa-kpis{margin-bottom:18px}
+.pa-row{cursor:pointer}
+.pa-row:hover td{background:var(--surface-2)}
+.pa-modal .modal-b{display:flex;flex-direction:column;gap:6px}
+.pa-top{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.pa-top .form-row{min-width:220px}
+.pa-next{font-size:13.5px;padding-bottom:8px}
+.pa-sec{border-top:1px solid var(--border);padding-top:14px;margin-top:8px;display:flex;flex-direction:column;gap:10px}
+.pa-sec-h{font-size:14px;font-weight:750}
+.pa-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pa-metrics>div{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.pa-metrics b{font-size:16px;font-variant-numeric:tabular-nums}
+.pa-gap{width:100%;border-collapse:collapse;font-size:13.5px}
+.pa-gap td{padding:7px 6px;border-bottom:1px solid var(--border);vertical-align:middle}
+.pa-gap select{height:32px;font-size:13px}
+.pa-gap-tot td{font-weight:750;border-bottom:0}
+.pa-gap-pill{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:var(--pill);background:var(--surface-2)}
+.pa-scheda{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.pa-prob{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px dashed var(--border)}
+.pa-prob-d{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pa-prob-d textarea{min-height:64px;font-size:13px;background:var(--surface-2);border:1.5px solid transparent;border-radius:12px;padding:9px 12px;width:100%;resize:vertical;line-height:1.45}
+.pa-prob-d textarea:focus{outline:none;border-color:var(--focus);background:var(--surface)}
+.pa-gap select{background:var(--surface-2);border:1.5px solid transparent;border-radius:10px;padding:0 10px}
+.pa-out{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+.pa-caso{padding-bottom:10px;border-bottom:1px dashed var(--border)}
+@media(max-width:700px){.pa-metrics{grid-template-columns:1fr 1fr}.pa-prob-d{grid-template-columns:1fr}}
 @media(max-width:900px){.user-box .email-cell{display:none}}
 .user-box .email-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .span-3{grid-column:span 3}
+</style>
 </head>
 <body class="locked">
 <div id="gate" role="main" aria-live="polite"></div>
@@ -1832,6 +1860,7 @@ const SEC_NAME={outbound:'Outbound'};
 function sectionOf(v){return 'outbound'}
 const NAV=[
   {id:'dashboard',label:'Dashboard',icon:'M3 3v18h18 M7 14l3-3 3 3 5-6'},
+  {id:'prospect',label:'Prospect Amazon',icon:'M3 7h18l-2 12H5z M8 7V5a4 4 0 0 1 8 0v2'},
   {id:'lead',label:'Ricerca lead',icon:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-4.35-4.35'},
   {id:'contatti',label:'Contatti',icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75'},
   {id:'pianifica',label:'Pianificazione',icon:'M3 4h18v18H3z M16 2v4 M8 2v4 M3 10h18 M8 14h2 M14 14h2 M8 18h2'},
@@ -1855,6 +1884,7 @@ function renderNav(){
     if(n.id==='risposte'&&newRep) badge=`<span class="badge ok">${newRep}</span>`;
     if(n.id==='pianifica'&&backlog) badge=`<span class="badge plain">${backlog}</span>`;
     if(n.id==='lead'&&ldBusy()) badge=`<span class="badge">in corso</span>`;
+    if(n.id==='prospect'&&pa.loaded){const t=paTasks().length;if(t)badge=`<span class="badge">${t}</span>`;}
     const on=state.view===n.id;
     return `<button class="${on?'active':''}" ${on?'aria-current="page"':''} onclick="go('${n.id}')">${ico(n.icon)}<span>${n.label}</span>${badge}</button>`;
   });
@@ -1916,6 +1946,7 @@ function heroCopy(){
   const rep=state.contacts.filter(c=>c.haRisposto).length, newRep=state.contacts.filter(c=>c.haRisposto&&c.replySeen===false).length;
   const backlog=state.contacts.filter(isUnplanned).length;
   if(state.view==='lead') return ldHeroCopy();
+  if(state.view==='prospect') return paHeroCopy();
   if(state.view==='stats') return obHeroCopy();
   if(!n) return {t:'Benvenuto in Outbound.',l:'Importa una lista di contatti in CSV o Excel: le colonne vengono riconosciute in automatico.'};
   switch(state.view){
@@ -1963,6 +1994,7 @@ function render(){
       <button class="btn" onclick="generateAllDrafts()">${I.spark}Genera mancanti</button>`;
   } else { primary=`<button class="btn primary" onclick="pickFile()">${I.plus}Importa contatti</button>`; importPrimary=true; }
   if(state.view==='lead'){ ta.innerHTML=ldTopActions(); }
+  else if(state.view==='prospect'){ ta.innerHTML=paTopActions(); }
   else if(state.view==='stats'){ ta.innerHTML=`<button class="btn" onclick="obLoad(true)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="lbl">Aggiorna</span></button>`; }
   else ta.innerHTML=primary
     +(has&&!importPrimary?`<button class="btn" onclick="pickFile()">${I.plus}<span class="lbl">Importa</span></button>`:'')
@@ -1976,6 +2008,7 @@ function render(){
   else if(state.view==='calendario')C.innerHTML=viewCalendario();
   else if(state.view==='risposte')C.innerHTML=viewRisposte();
   else if(state.view==='lead'){ C.innerHTML=viewLead(); }
+  else if(state.view==='prospect'){ C.innerHTML=viewProspect(); }
   else if(state.view==='stats'){ C.innerHTML=viewStats(); }
   if(state.view==='coda')bindCodaInputs();
   if(state.view==='pianifica')bindPianifica();
@@ -2597,7 +2630,7 @@ function emptyState(){
    MODALS
    ======================================================= */
 function modal(html){document.getElementById('modalRoot').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()">${html}</div>`}
-function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+function closeModal(){const wasPa=!!document.querySelector('#modalRoot .pa-modal');document.getElementById('modalRoot').innerHTML='';if(wasPa&&state.view==='prospect')render()}
 
 /* ---- import mapping modal ---- */
 let _importData=null;
@@ -3089,6 +3122,7 @@ async function authInit(){
       state.contacts=[]; save(LS.contacts,[]);                 // niente dati rimasti sul dispositivo
       ld.loaded=false;ld.searches=[];ld.leads=[];ld.sel.clear();clearTimeout(ld.pollT);
       ob.loaded=false;ob.rows=[];ob.links=[];
+      paReset();
       render();
     }
     else if(ev==='SIGNED_IN' && session && was!==session.user.id){auth.allowed=null;render();setTimeout(authAfterLogin,0);}
@@ -3100,7 +3134,7 @@ async function authInit(){
 async function authAfterLogin(){
   const {data,error}=await sb.rpc('ob_is_user');
   auth.allowed=(!error&&data===true);
-  if(auth.allowed){ initSupabase(); ldLoad({silent:state.view!=='lead'}); }
+  if(auth.allowed){ initSupabase(); ldLoad({silent:state.view!=='lead'}); paLoad({silent:state.view!=='prospect'}); }
   render();
 }
 async function authLogin(ev){
@@ -3479,6 +3513,685 @@ function ldResultsView(){
   <div class="ld-selbar" id="ld-selbar" ${ld.sel.size?'':'hidden'}><span class="plan-sel-info"><b id="ld-sel-n">${ld.sel.size}</b> <span id="ld-sel-t">${ld.sel.size===1?'lead scelto':'lead scelti'}</span></span><span class="spacer"></span><button class="btn sm ghost" onclick="ld.sel.clear();render()">Annulla</button><button class="btn" onclick="ldExportCsv()">${LD_I.ext}Esporta in CSV</button><button class="btn primary" onclick="ldImport()">${LD_I.plus}Aggiungi ai contatti</button></div>`
   :`<div class="empty">${LD_I.search}<h4>${ld.leads.length?'Nessun lead con questi filtri':'Ancora nessun lead'}</h4><p>${ld.leads.length?'Prova a togliere un filtro o a cambiare ricerca.':'Avvia la prima ricerca qui sopra: i risultati compaiono qui appena n8n ha finito.'}</p></div>`}
   <p class="helptip" style="margin-top:12px">Aggiungendo un lead ai contatti entra in Outbound come “da pianificare”, con descrizione e sito per scrivere l'email. I lead senza email restano qui: puoi chiamarli o cercare l'indirizzo sul sito.</p>`;
+}
+
+/* =======================================================
+   PROSPECT AMAZON — flusso di acquisizione clienti Callforus
+   I brand arrivano dall'estensione Chrome «Callforus Prospect» (tabella prospects).
+   Qui: fasce, punteggio gap, fiere, analisi della scheda con Claude, video,
+   sequenza LinkedIn → email (via Outbound) → telefono → chiusura.
+   ======================================================= */
+const PA_STATI=['Estratto','Qualificato','Analizzato','Video pronto','In sequenza','In conversazione','Call fissata','Cliente','Perso','Archivio'];
+const PA_CHIUSI=['Cliente','Perso','Archivio'];
+const PA_SEQ=[
+  {id:'li_invito',d:0,canale:'LinkedIn',label:'Visita il profilo e invia il collegamento',tpl:null},
+  {id:'li_msg',d:2,canale:'LinkedIn',label:'Messaggio con il video',tpl:'linkedin'},
+  {id:'email',d:5,canale:'Email',label:'Email con il video',tpl:'email'},
+  {id:'tel',d:9,canale:'Telefono',label:'Telefonata',tpl:'telefono'},
+  {id:'chiusura',d:14,canale:'Email o LinkedIn',label:'Messaggio di chiusura',tpl:'chiusura'},
+];
+const PA_CASI_DEFAULT=[
+  {id:'carcare',nome:'Car care',testo:'un brand di car care portato da zero a quasi 500.000 € di vendite annue su Amazon in 4 anni',categorie:'auto e moto, fai da te, giardino'},
+  {id:'integratori',nome:'Integratori',testo:'un\'azienda di integratori con +50% di vendite in 6 mesi, rifacendo le pagine prodotto',categorie:'salute, integratori, cosmetica, cura della persona, casa e cucina e tutto il resto'},
+  {id:'orologi',nome:'Orologi',testo:'un brand di orologi con vendite ferme, rilanciato in un anno fino a diventare un riferimento nella fascia low ticket donna',categorie:'moda, accessori, orologi, gioielli'},
+];
+const PA_TPL_DEFAULT={
+  linkedin:'Buongiorno {nome}, ho guardato le schede di {brand} su Amazon.it e ho registrato un video di 2 minuti con tre punti che secondo me vi stanno costando vendite. Il principale: {problema1}.\n\nEcco il video: {video}\n\nSe le è utile, le mostro l\'analisi completa in una call di 20 minuti.\n{mittente} – Callforus',
+  emailOggetto:'{brand} su Amazon – 3 punti in un video di 2 minuti',
+  email:'Buongiorno {nome},\nsono {mittente}, Amazon Account Manager da più di 7 anni. Ho analizzato la scheda di {prodotto} su Amazon.it e ho raccolto in un video di 2 minuti tre interventi che farei subito, a partire da questo: {problema1}.\n\nVideo: {video}\n\nUn caso simile al vostro: {caso}. Se vuole, le mostro l\'analisi completa in una call di 20 minuti: mi indichi lei un giorno.\n\nBuona giornata,\n{mittente}',
+  telefono:'Buongiorno, sono {mittente} di Callforus. Qualche giorno fa ho mandato a {nome} un video di due minuti sulla vostra scheda Amazon di {prodotto}. Volevo sapere se l\'ha visto e, se il tema vi interessa, fissare 20 minuti per mostrarvi l\'analisi completa.',
+  chiusura:'Buongiorno {nome}, è il mio ultimo messaggio su questo tema. Se Amazon adesso non è una priorità, nessun problema; il video resta disponibile qui: {video}. Se le cose cambiano, mi trova a questo indirizzo.',
+};
+const PA_TPL_LABEL={linkedin:'Messaggio LinkedIn (giorno 2)',emailOggetto:'Oggetto email',email:'Email (giorno 5, parte da Outbound)',telefono:'Traccia della telefonata (giorno 9)',chiusura:'Messaggio di chiusura (giorno 14)'};
+const PA_GAP=[
+  {k:'fiera',label:'Presente in una fiera di settore',pt:1},
+  {k:'ecommerce',label:'E-commerce proprio o rete vendita strutturata',pt:1},
+  {k:'stelle',label:'Stelle medie sotto 4,2',pt:1},
+  {k:'rivenditori',label:'Prodotti venduti in prevalenza da rivenditori',pt:2},
+  {k:'schede_povere',label:'Schede povere: meno di 6 immagini, niente A+ o niente video',pt:1},
+  {k:'catalogo_ridotto',label:'Catalogo su Amazon molto più piccolo di quello del sito',pt:1},
+];
+const pa={loaded:false,loading:false,err:'',rows:[],fiere:[],fieraIdx:null,fieraCache:new Map(),tab:'oggi',q:'',fascia:'tutte',stato:'tutti',chan:null,rt:null,busy:{}};
+
+function paCfg(){
+  if(!state.config.prospect||typeof state.config.prospect!=='object') state.config.prospect={};
+  const c=state.config.prospect;
+  if(c.sogliaA==null)c.sogliaA=10000;
+  if(c.sogliaB==null)c.sogliaB=3000;
+  if(c.badgeA==null)c.badgeA=5;
+  if(c.gapMin==null)c.gapMin=6;
+  if(c.mittente==null)c.mittente='';
+  c.tpl=Object.assign({},PA_TPL_DEFAULT,c.tpl||{});
+  if(!Array.isArray(c.casi)||!c.casi.length)c.casi=PA_CASI_DEFAULT.map(x=>({...x}));
+  return c;
+}
+function paSaveCfg(){save(LS.config,state.config)}
+const paById=id=>pa.rows.find(r=>r.id===id);
+const paKey=s=>String(s||'').replace(/\s+/g,' ').trim().toLowerCase();
+function paEuro(n){return n==null||n===''?'—':Math.round(+n).toLocaleString('it-IT')+' €'}
+function paMittente(){return (paCfg().mittente||state.templates.mittente||'').trim()}
+
+/* ---- dati ---- */
+async function paLoad(opts={}){
+  if(!sb||!auth.allowed||pa.loading)return;
+  pa.loading=true; if(state.view==='prospect'&&!opts.silent)render();
+  try{
+    const [p,f]=await Promise.all([
+      sb.from('prospects').select('*').order('created_at',{ascending:false}).limit(5000),
+      sb.from('fiere_espositori').select('fiera,nome,nome_key').limit(20000),
+    ]);
+    if(p.error)throw p.error; if(f.error)throw f.error;
+    pa.rows=p.data||[]; pa.fiere=f.data||[]; pa.fieraIdx=null; pa.fieraCache=new Map();
+    pa.loaded=true; pa.err='';
+    paSubscribe();
+    paSyncFromOutbound();
+  }catch(e){pa.err=e.message||String(e); if(!opts.silent&&state.view==='prospect')toast('Prospect: '+pa.err,'err')}
+  pa.loading=false;
+  if(state.view==='prospect')render(); else renderNav();
+}
+function paSubscribe(){
+  if(pa.chan||!sb)return;
+  pa.chan=sb.channel('prospects-rt').on('postgres_changes',{event:'*',schema:'public',table:'prospects'},pl=>{
+    if(pl.eventType==='DELETE'){const id=pl.old&&pl.old.id;pa.rows=pa.rows.filter(r=>r.id!==id);}
+    else{const r=pl.new;if(!r||!r.id)return;const i=pa.rows.findIndex(x=>x.id===r.id);if(i>=0)pa.rows[i]=r;else pa.rows.unshift(r);}
+    clearTimeout(pa.rt);
+    pa.rt=setTimeout(()=>{ if(state.view==='prospect'&&!document.querySelector('#modalRoot .modal'))softRender(); else renderNav(); },500);
+  }).subscribe();
+}
+function paReset(){
+  if(pa.chan&&sb){try{sb.removeChannel(pa.chan)}catch(e){}}
+  Object.assign(pa,{loaded:false,loading:false,err:'',rows:[],fiere:[],fieraIdx:null,fieraCache:new Map(),chan:null});
+}
+async function paSave(id,patch,opts={}){
+  const p=paById(id); if(!p)return false;
+  const before={...p};
+  Object.assign(p,patch);
+  const {data,error}=await sb.from('prospects').update(patch).eq('id',id).select().single();
+  if(error){Object.assign(p,before);toast('Salvataggio non riuscito: '+error.message,'err');return false}
+  Object.assign(p,data);
+  if(opts.reopen)paOpen(id,true);
+  if(opts.render!==false&&state.view==='prospect'&&!document.querySelector('#modalRoot .modal'))render();
+  renderNav();
+  return true;
+}
+// chi ha risposto in Outbound passa a «In conversazione»
+function paSyncFromOutbound(){
+  pa.rows.forEach(p=>{
+    if(!p.contact_id||p.stato!=='In sequenza')return;
+    const c=state.contacts.find(x=>x.id===p.contact_id);
+    if(c&&c.haRisposto&&!(c.reply&&c.reply.auto)) paSave(p.id,{stato:'In conversazione',prossima_azione:isoD(today())},{render:false});
+  });
+}
+
+/* ---- fascia, fiere, gap ---- */
+function paFasciaAuto(p){
+  if(!p.qualificato_il)return null;
+  const c=paCfg(), s=+p.stima_min_mese||0;
+  if(s>=c.sogliaA||(+p.con_badge||0)>=c.badgeA)return 'A';
+  if(s>=c.sogliaB)return 'B';
+  return 'Scarto';
+}
+function paFascia(p){return p.fascia||paFasciaAuto(p)}
+function paHasWord(hay,needle){
+  let i=hay.indexOf(needle);
+  const ok=ch=>!ch||!/[a-z0-9àèéìòù]/.test(ch);
+  while(i>=0){ if(ok(hay[i-1])&&ok(hay[i+needle.length]))return true; i=hay.indexOf(needle,i+1); }
+  return false;
+}
+function paFieraAuto(p){
+  const k=p.brand_key||paKey(p.brand);
+  if(pa.fieraCache.has(k))return pa.fieraCache.get(k);
+  if(!pa.fieraIdx){pa.fieraIdx=new Map();pa.fiere.forEach(f=>{if(!pa.fieraIdx.has(f.nome_key))pa.fieraIdx.set(f.nome_key,f.fiera)});}
+  let res=pa.fieraIdx.get(k)||null;
+  if(!res&&k.length>=4){for(const [nk,f] of pa.fieraIdx){ if(nk.length>=4&&(paHasWord(nk,k)||(nk.length>=5&&paHasWord(k,nk)))){res=f;break;} }}
+  pa.fieraCache.set(k,res); return res;
+}
+function paFiera(p){return p.fiera||paFieraAuto(p)}
+function paGapAuto(p,k){
+  const s=p.scheda||{};
+  switch(k){
+    case 'fiera': return !!paFiera(p);
+    case 'stelle': {const v=p.stelle??s.stelle; return v==null?null:(+v>0&&+v<4.2);}
+    case 'rivenditori': {
+      const v=paKey(s.venditore); if(!v)return null; if(/^amazon/.test(v))return false;
+      const b=p.brand_key||paKey(p.brand), rs=paKey(p.ragione_sociale);
+      return !(v.includes(b)||b.includes(v)||(rs&&(rs.includes(v)||v.includes(rs.split(' ')[0]))));
+    }
+    case 'schede_povere': { if(s.immagini==null&&s.aplus==null)return null; return (+s.immagini||0)<6||!s.aplus||!s.video; }
+    default: return null;
+  }
+}
+function paGapVal(p,k){const g=p.gap||{};return typeof g[k]==='boolean'?g[k]:paGapAuto(p,k)}
+function paFattPt(p){const f=+p.fatturato||0;return f>=10e6?3:(f>=2e6?2:0)}
+function paGap(p){return paFattPt(p)+PA_GAP.reduce((t,g)=>t+(paGapVal(p,g.k)?g.pt:0),0)}
+
+/* ---- sequenza ---- */
+function paManaged(p,st){return !!p.contact_id&&(st.id==='email'||st.id==='chiusura')}
+function paSeqDue(p,st){return p.seq_start?nextWorkday(addDays(parseD(p.seq_start),st.d)):null}
+function paStepDone(p,st){
+  if((p.seq_done||{})[st.id])return true;
+  if(p.contact_id){
+    const c=state.contacts.find(x=>x.id===p.contact_id);
+    if(c){
+      if(st.id==='email'&&(c.step||0)>0)return true;
+      if(st.id==='chiusura'&&((c.step||0)>=state.cadence.length||c.haRisposto))return true;
+    }
+  }
+  return false;
+}
+function paNextStep(p){
+  if(!p.seq_start||PA_CHIUSI.includes(p.stato)||p.stato==='In conversazione'||p.stato==='Call fissata')return null;
+  return PA_SEQ.find(st=>!paStepDone(p,st)&&!paManaged(p,st))||null;
+}
+function paTasks(){
+  const t=today(), out=[];
+  pa.rows.forEach(p=>{
+    if(PA_CHIUSI.includes(p.stato))return;
+    const st=paNextStep(p);
+    if(st){const due=paSeqDue(p,st); if(due<=t)out.push({p,st,due});}
+    else if(p.prossima_azione&&!paNextStep(p)){
+      const due=parseD(p.prossima_azione);
+      if(due<=t&&(!p.seq_start||p.stato==='In conversazione'||p.stato==='Call fissata'))out.push({p,st:null,due});
+    }
+  });
+  return out.sort((a,b)=>a.due-b.due);
+}
+function paNextIso(p){const st=paNextStep(p);return st?isoD(paSeqDue(p,st)):null}
+
+/* ---- testi ---- */
+function paFill(tpl,p){
+  const c=paCfg(), s=p.scheda||{}, pr=(p.problemi||[])[0]||{};
+  const nome=(p.contatto_nome||'').trim();
+  const caso=(c.casi.find(x=>x.id===p.caso_studio)||{}).testo||'[caso studio]';
+  const prod=s.prodotto_breve||(s.titolo?s.titolo.split(/[,|–\-(]/)[0].trim().slice(0,70):'')||p.brand;
+  return String(tpl||'')
+    .replace(/Buongiorno \{nome\}/g,nome?'Buongiorno '+nome:'Buongiorno')
+    .replace(/\{nome\}/g,nome||'chi si occupa di Amazon')
+    .replace(/\{brand\}/g,p.brand||'')
+    .replace(/\{problema1\}/g,pr.titolo?pr.titolo.charAt(0).toLowerCase()+pr.titolo.slice(1):'[problema principale]')
+    .replace(/\{video\}/g,p.video_url||'[link al video]')
+    .replace(/\{prodotto\}/g,prod)
+    .replace(/\{caso\}/g,caso)
+    .replace(/\{mittente\}/g,paMittente()||'[il tuo nome]');
+}
+function paCopy(id,tplKey){
+  const p=paById(id);if(!p)return;
+  const t=paFill(paCfg().tpl[tplKey],p);
+  navigator.clipboard.writeText(t).then(()=>toast('Testo copiato','ok')).catch(()=>toast('Copia non riuscita','err'));
+}
+
+/* ---- azioni ---- */
+async function paStartSeq(id){
+  const p=paById(id);if(!p)return;
+  if(!p.video_url&&!confirm('Non c\'è ancora il link al video. Avvio lo stesso la sequenza?'))return;
+  const start=isoD(today());
+  const tmp={...p,seq_start:start,seq_done:{},stato:'In sequenza'};
+  await paSave(id,{seq_start:start,seq_done:{},stato:'In sequenza',prossima_azione:paNextIso(tmp)},{reopen:true});
+}
+async function paStepToggle(id,stId){
+  const p=paById(id);if(!p)return;
+  const d={...(p.seq_done||{})};
+  if(d[stId])delete d[stId]; else d[stId]=isoD(today());
+  const tmp={...p,seq_done:d};
+  await paSave(id,{seq_done:d,prossima_azione:paNextIso(tmp)},{reopen:!!document.querySelector('#modalRoot .modal')});
+  if(!document.querySelector('#modalRoot .modal')&&state.view==='prospect')render();
+}
+async function paTaskDone(id,stId){
+  if(stId)return paStepToggle(id,stId);
+  const p=paById(id);if(!p)return;
+  await paSave(id,{prossima_azione:null});
+}
+function paToOutbound(id){
+  const p=paById(id);if(!p)return;
+  const em=(p.email||'').trim();
+  if(!em){toast('Scrivi prima l\'email del contatto','warn');return}
+  const ex=state.contacts.find(c=>(c.email||'').trim().toLowerCase()===em.toLowerCase());
+  if(ex){paSave(id,{contact_id:ex.id},{reopen:true});toast('Il contatto c\'era già in Outbound: l\'ho collegato','ok');return}
+  if(!p.video_url&&!confirm('Non c\'è ancora il link al video: nell\'email resterà «[link al video]». Creo lo stesso il contatto?'))return;
+  const c=paCfg(), st=PA_SEQ.find(s=>s.id==='email');
+  let due=p.seq_start?paSeqDue(p,st):nextWorkday(today()); if(due<today())due=nextWorkday(today());
+  const probs=(p.problemi||[]).map(x=>x.titolo).filter(Boolean).join('; ');
+  const k=mkContact({
+    azienda:p.ragione_sociale||p.brand, email:em, sede:p.sede||'',
+    ruolo:[p.contatto_nome,p.contatto_ruolo].filter(Boolean).join(' – '),
+    settore:'Amazon'+((p.keywords||[]).length?' – '+p.keywords.slice(0,2).join(', '):''),
+    sitoWeb:p.sito_web||'',
+    descrizione:`Brand ${p.brand}, vende su Amazon.it. Video personalizzato: ${p.video_url||'non ancora registrato'}. Problemi individuati nella scheda: ${probs||'—'}.`,
+    oggettoBase:paFill(c.tpl.emailOggetto,p), corpoBase:paFill(c.tpl.email,p),
+  });
+  k.n=p.contatto_nome||'';
+  k.scheduledDate=isoD(due);
+  state.contacts.push(k); persist();
+  paSave(id,{contact_id:k.id},{reopen:true});
+  toast(`Contatto creato in Outbound: l'email è pianificata per ${fmtDLong(due)} e la trovi in Coda invio quel giorno`,'ok');
+}
+function paGoContact(id){const p=paById(id);if(!p||!p.contact_id)return;closeModal();openContact(p.contact_id)}
+
+/* ---- analisi con Claude ---- */
+async function paClaude(system,user,maxTokens){
+  const key=state.config.anthropicKey;
+  if(!key)throw new Error('Manca la chiave API Anthropic: aprila in Impostazioni → Generazione AI');
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:Object.assign({'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      state.config.anthropicWorkspace?{'anthropic-workspace-id':state.config.anthropicWorkspace}:{}),
+    body:JSON.stringify({model:MODEL,max_tokens:maxTokens||1200,system,messages:[{role:'user',content:user}]})
+  });
+  if(!r.ok){const t=await r.text();throw new Error('Anthropic '+r.status+': '+t.slice(0,200))}
+  const data=await r.json(), u=data.usage||{};
+  recordUsage((u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),u.output_tokens||0);
+  let txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim().replace(/```json|```/g,'').trim();
+  const m=txt.match(/\{[\s\S]*\}/); if(m)txt=m[0];
+  return JSON.parse(txt);
+}
+async function paAnalyze(id){
+  const p=paById(id);if(!p)return;
+  const s=p.scheda||{}, c=paCfg();
+  const pasted=(document.getElementById('pa-incolla')?.value||'').trim();
+  const appunti=(document.getElementById('pa-appunti')?.value||'').trim();
+  if(!s.titolo&&!pasted&&!s.testo_incollato){toast('Serve la scheda: inviala con l\'estensione o incolla il testo della pagina','warn');return}
+  pa.busy[id]=true; paOpen(id,true);
+  const sys=`Sei un Amazon Account Manager con 8 anni di esperienza. Prepari un video di 2 minuti per un'azienda che vende già su Amazon.it, per mostrarle cosa le sta costando vendite.
+Dai dati della scheda prodotto e dagli appunti scegli i 3 problemi più gravi, in ordine di impatto sulle vendite.
+Usa solo ciò che è nei dati: nessun numero, risultato o fatto inventato. Italiano semplice, frasi brevi, dai del "voi" all'azienda.
+Casi studio disponibili, scegli l'id più vicino alla categoria del prodotto:
+${c.casi.map(x=>`- ${x.id}: ${x.testo} (categorie: ${x.categorie})`).join('\n')}
+Rispondi SOLO con JSON valido, nessun testo prima o dopo:
+{"problemi":[{"titolo":"massimo 8 parole","cosa":"cosa si vede nella scheda, una frase","perche":"perché costa vendite, una frase","azione":"cosa faremmo, una frase"}],"caso_studio":"id","apertura":"frase di apertura del video, massimo 20 parole","prodotto_breve":"nome breve del prodotto, massimo 6 parole"}`;
+  const sch=s.titolo?{titolo:s.titolo,punti_elenco:s.punti_elenco,descrizione:s.descrizione,numero_immagini:s.immagini,video:s.video,contenuti_a_plus:s.aplus,brand_store:s.brand_store,stelle:s.stelle,recensioni:s.recensioni,prezzo:s.prezzo,venduto_da:s.venditore,spedito_da:s.spedito_da,badge_acquisti:s.badge_acquisti,classifica:s.bsr}:null;
+  const user=JSON.stringify({brand:p.brand,keyword_amazon:p.keywords,risultati_di_ricerca_del_brand:{prodotti:p.prodotti,prezzo_medio:p.prezzo_medio,stelle_medie:p.stelle,recensioni_totali:p.recensioni,prodotti_con_badge_acquisti:p.con_badge},scheda_prodotto:sch||undefined,testo_scheda_incollato:(pasted||s.testo_incollato||'').slice(0,12000)||undefined,appunti_checklist:appunti||s.appunti||undefined},null,1);
+  try{
+    const o=await paClaude(sys,user,1400);
+    const probs=(Array.isArray(o.problemi)?o.problemi:[]).slice(0,3).map(x=>({titolo:String(x.titolo||'').slice(0,120),cosa:String(x.cosa||''),perche:String(x.perche||''),azione:String(x.azione||'')}));
+    if(!probs.length)throw new Error('risposta senza problemi');
+    const scheda={...s,appunti:appunti||s.appunti||'',prodotto_breve:String(o.prodotto_breve||s.prodotto_breve||'').slice(0,80)};
+    if(pasted)scheda.testo_incollato=pasted.slice(0,12000);
+    const patch={problemi:probs,apertura:String(o.apertura||''),caso_studio:c.casi.some(x=>x.id===o.caso_studio)?o.caso_studio:(p.caso_studio||null),scheda};
+    if(['Estratto','Qualificato'].includes(p.stato))patch.stato='Analizzato';
+    pa.busy[id]=false;
+    await paSave(id,patch,{reopen:true});
+    toast('Analisi pronta: rileggila e correggila prima del video','ok');
+  }catch(e){pa.busy[id]=false;paOpen(id,true);toast('Analisi non riuscita: '+e.message,'err')}
+}
+
+/* ---- modifica campi dalla scheda ---- */
+function paF(id,f,v){
+  const p=paById(id);if(!p)return;
+  const NUM=['fatturato','dipendenti'];
+  let val=v;
+  if(NUM.includes(f)){const n=String(v).replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,'');val=n===''?null:Math.round(+n);}
+  else if(typeof v==='string'){val=v.trim();if(val==='')val=null;}
+  if(p[f]===val)return;
+  const patch={[f]:val};
+  if(f==='video_url'&&val&&['Estratto','Qualificato','Analizzato'].includes(p.stato))patch.stato='Video pronto';
+  if(f==='stato'&&val==='In conversazione')patch.prossima_azione=isoD(today());
+  const reopen=['fascia','fatturato','fiera','video_url','stato','email','contatto_nome'].includes(f);
+  paSave(id,patch,{reopen,render:false});
+}
+function paGapSet(id,k,v){
+  const p=paById(id);if(!p)return;
+  const g={...(p.gap||{})};
+  if(v==='auto')delete g[k]; else g[k]=(v==='si');
+  paSave(id,{gap:g},{reopen:true,render:false});
+}
+function paProbSet(id,i,f,v){
+  const p=paById(id);if(!p)return;
+  const pr=(p.problemi||[]).map(x=>({...x}));
+  while(pr.length<=i)pr.push({titolo:'',cosa:'',perche:'',azione:''});
+  pr[i][f]=v;
+  paSave(id,{problemi:pr},{render:false});
+}
+function paSchedaSet(id,f,v){
+  const p=paById(id);if(!p)return;
+  paSave(id,{scheda:{...(p.scheda||{}),[f]:v}},{render:false});
+}
+async function paDelete(id){
+  const p=paById(id);if(!p)return;
+  if(!confirm(`Eliminare «${p.brand}» dai prospect? Se l'estensione lo ritrova, verrà aggiunto di nuovo come nuovo. Per non vederlo più è meglio lo stato «Archivio».`))return;
+  const {error}=await sb.from('prospects').delete().eq('id',id);
+  if(error){toast('Eliminazione non riuscita: '+error.message,'err');return}
+  pa.rows=pa.rows.filter(r=>r.id!==id);closeModal();render();toast('Prospect eliminato','ok');
+}
+
+/* ---- viste ---- */
+function paFasciaChip(f){
+  if(!f)return '<span class="chip da"><span class="d"></span>Da qualificare</span>';
+  if(f==='A')return '<span class="chip today"><span class="d"></span>Fascia A</span>';
+  if(f==='B')return '<span class="chip wait"><span class="d"></span>Fascia B</span>';
+  return '<span class="chip done"><span class="d"></span>Scarto</span>';
+}
+function paStatoChip(s){
+  const k={'Estratto':'da','Qualificato':'plan','Analizzato':'plan','Video pronto':'seq','In sequenza':'wait','In conversazione':'reply','Call fissata':'today','Cliente':'reply','Perso':'stop','Archivio':'done'}[s]||'da';
+  return `<span class="chip ${k}"><span class="d"></span>${esc(s)}</span>`;
+}
+function paNextLabel(p){
+  if(PA_CHIUSI.includes(p.stato))return p.stato;
+  if(p.stato==='In conversazione')return 'Fissa la call';
+  if(p.stato==='Call fissata')return 'Prepara la call';
+  if(!p.qualificato_il)return p.url?'Qualifica con l\'estensione':'Manca il link: risalva il brand';
+  const f=paFascia(p);
+  if(f==='Scarto')return 'Scartato in fase 2';
+  if(!p.ragione_sociale&&!p.fatturato)return 'Fase 3: dati dell\'azienda';
+  if(!(p.problemi||[]).length){
+    if(paGap(p)<paCfg().gapMin)return `Punteggio ${paGap(p)}/10: in coda`;
+    return p.scheda?'Fase 4: analizza la scheda':'Fase 4: invia la scheda con l\'estensione';
+  }
+  if(!p.video_url)return 'Registra il video';
+  if(!p.seq_start)return 'Avvia la sequenza';
+  const st=paNextStep(p);
+  if(!st)return p.contact_id?'Email e chiusura da Outbound':'Sequenza conclusa';
+  return `${st.label} · ${fmtD(paSeqDue(p,st))}`;
+}
+function paPriority(p){const f=paFascia(p);return (f==='A'?2e9:f==='B'?1e9:0)+paGap(p)*1e8+(+p.stima_min_mese||0)}
+function paRows(){
+  const q=pa.q.trim().toLowerCase();
+  let rows=pa.rows.filter(p=>{
+    if(pa.tab==='lavoro'&&(PA_CHIUSI.includes(p.stato)||paFascia(p)==='Scarto'))return false;
+    if(pa.fascia!=='tutte'){const f=paFascia(p)||'nd';if(f!==pa.fascia)return false;}
+    if(pa.stato!=='tutti'&&p.stato!==pa.stato)return false;
+    if(q&&![p.brand,p.ragione_sociale,(p.keywords||[]).join(' '),p.contatto_nome,p.email].some(x=>String(x||'').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  return rows.sort((a,b)=>paPriority(b)-paPriority(a));
+}
+function paSet(k,v){pa[k]=v;render()}
+function paSearch(v){pa.q=v;clearTimeout(window._paq);window._paq=setTimeout(()=>{render();const i=document.getElementById('pa-q');if(i){i.focus();i.setSelectionRange(v.length,v.length)}},220)}
+function paHeroCopy(){
+  if(!auth.session||!auth.allowed)return {t:'Prospect Amazon.',l:'Accedi per vedere i brand trovati con l\'estensione.'};
+  if(!pa.loaded)return {t:'Prospect Amazon.',l:pa.err?'Non riesco a leggere i prospect.':'Carico i prospect…'};
+  const n=paTasks().length, a=pa.rows.filter(p=>paFascia(p)==='A'&&!PA_CHIUSI.includes(p.stato)).length;
+  if(!pa.rows.length)return {t:'Nessun prospect ancora.',l:'Installa l\'estensione Callforus Prospect, cerca una keyword su amazon.it e salva i brand del filtro Marca.'};
+  return {t:n?`${n} ${n===1?'azione':'azioni'} da fare oggi.`:'Niente in scadenza oggi.',l:`${pa.rows.length} brand in archivio · ${a} in fascia A · obiettivo: 10 prospect contattati a settimana`};
+}
+function paTopActions(){
+  if(!auth.session||!auth.allowed)return '';
+  return `<button class="btn" onclick="paAddModal()">${LD_I.plus}<span class="lbl">Aggiungi brand</span></button>
+    <button class="btn" onclick="paFiereModal()"><span class="lbl">Fiere</span></button>
+    <button class="btn" onclick="paSettingsModal()"><span class="lbl">Soglie e testi</span></button>
+    <button class="btn" onclick="paExportCsv()">${LD_I.ext}<span class="lbl">Esporta</span></button>
+    <button class="btn" onclick="paLoad()" title="Ricarica i prospect"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="lbl">Aggiorna</span></button>`;
+}
+function viewProspect(){
+  if(!auth.ready)return `<div class="empty"><span class="spinner"></span></div>`;
+  if(!auth.session)return authLoginView('prospect');
+  if(auth.allowed===null)return `<div class="empty"><span class="spinner"></span></div>`;
+  if(auth.allowed===false)return `<div class="empty"><h4>Questo account non è abilitato</h4></div>`;
+  if(!pa.loaded){
+    if(!pa.loading&&!pa.err)setTimeout(()=>paLoad(),0);
+    if(pa.err){
+      const missing=/prospects|fiere_espositori/.test(pa.err)&&/exist|schema cache|not find/i.test(pa.err);
+      return `<div class="empty"><h4>${missing?'Mancano le tabelle dei prospect':'Non riesco a leggere i prospect'}</h4><p>${missing?'Nel SQL Editor di Supabase esegui una volta il file <code>supabase/prospects.sql</code>, poi ricarica.':esc(pa.err)}</p><button class="btn" onclick="pa.err='';paLoad()">Riprova</button></div>`;
+    }
+    return `<div class="empty"><span class="spinner"></span><p style="margin-top:14px">Carico i prospect…</p></div>`;
+  }
+  const tasks=paTasks();
+  const cnt=f=>pa.rows.filter(f).length;
+  const kpi=`<div class="nl-kpis pa-kpis">
+    <div class="stat-t t-white"><div class="k">Fascia A da lavorare</div><div class="row"><div class="v">${cnt(p=>paFascia(p)==='A'&&!PA_CHIUSI.includes(p.stato)&&!p.seq_start)}</div><div class="m">${cnt(p=>!p.qualificato_il&&p.url)} brand ancora da qualificare</div></div></div>
+    <div class="stat-t t-white"><div class="k">Video pronti</div><div class="row"><div class="v">${cnt(p=>p.video_url&&!p.seq_start&&!PA_CHIUSI.includes(p.stato))}</div><div class="m">${cnt(p=>(p.problemi||[]).length&&!p.video_url&&!PA_CHIUSI.includes(p.stato))} analisi senza video</div></div></div>
+    <div class="stat-t t-white"><div class="k">In sequenza</div><div class="row"><div class="v">${cnt(p=>p.stato==='In sequenza')}</div><div class="m">${cnt(p=>p.stato==='In conversazione')} in conversazione · ${cnt(p=>p.stato==='Call fissata')} call</div></div></div>
+  </div>`;
+  const tabs=`<div class="filters"><div class="seg" role="group" aria-label="Vista">
+    ${[['oggi',`Da fare oggi (${tasks.length})`],['lavoro','Da lavorare'],['tutti','Tutti']].map(([k,l])=>`<button class="fbtn ${pa.tab===k?'on':''}" aria-pressed="${pa.tab===k}" onclick="paSet('tab','${k}')">${l}</button>`).join('')}
+  </div></div>`;
+  if(pa.tab==='oggi')return kpi+tabs+paTasksView(tasks);
+  return kpi+tabs+paListView();
+}
+function paTasksView(tasks){
+  if(!tasks.length)return `<div class="empty"><h4>Niente in scadenza oggi</h4><p>Le azioni della sequenza (collegamento e messaggio LinkedIn, telefonata, chiusura) compaiono qui il giorno in cui vanno fatte. Le email partono da Coda invio.</p><button class="btn" onclick="paSet('tab','lavoro')">Vai ai prospect da lavorare</button></div>`;
+  return `<div class="table-wrap"><table><thead><tr><th>Brand</th><th>Cosa fare</th><th>Quando</th><th></th></tr></thead><tbody>
+  ${tasks.map(({p,st,due})=>{
+    const late=due<today();
+    const link=st&&st.canale==='LinkedIn'&&p.linkedin_url?`<a class="btn sm ghost" href="${escAttr(p.linkedin_url)}" target="_blank" rel="noopener noreferrer">Apri LinkedIn</a>`:'';
+    const tel=st&&st.id==='tel'&&p.telefono?`<a class="btn sm ghost" href="tel:${escAttr(p.telefono.replace(/\s+/g,''))}">${esc(p.telefono)}</a>`:'';
+    return `<tr>
+      <td class="az"><div><a href="#" onclick="paOpen('${p.id}');return false" style="color:inherit">${esc(p.brand)}</a></div><div class="ld-sub">${esc([p.contatto_nome,p.contatto_ruolo].filter(Boolean).join(' · ')||'contatto da trovare')}</div></td>
+      <td>${st?`<b>${esc(st.canale)}</b> · ${esc(st.label)}`:'Promemoria'}${p.note&&!st?`<div class="ld-sub">${esc(p.note.slice(0,120))}</div>`:''}</td>
+      <td>${late?`<span class="chip late"><span class="d"></span>${fmtD(due)}</span>`:'<span class="chip today"><span class="d"></span>Oggi</span>'}</td>
+      <td style="text-align:right;white-space:nowrap">${link}${tel}${st&&st.tpl?`<button class="btn sm" onclick="paCopy('${p.id}','${st.tpl}')">Copia testo</button>`:''}<button class="btn sm primary" onclick="paTaskDone('${p.id}',${st?`'${st.id}'`:'null'})">Fatto</button></td>
+    </tr>`;}).join('')}
+  </tbody></table></div>
+  <p class="helptip" style="margin-top:12px">LinkedIn non si automatizza: «Copia testo» prepara il messaggio con nome, problema e video, tu lo incolli e lo invii. «Fatto» fa avanzare la sequenza.</p>`;
+}
+function paListView(){
+  const rows=paRows(), shown=rows.slice(0,400);
+  const fasce=[['tutte','Tutte le fasce'],['A','Fascia A'],['B','Fascia B'],['Scarto','Scarto'],['nd','Da qualificare']];
+  return `<div class="filters">
+    <div class="search">${LD_I.search.replace('class="ico"','class="ico" style="width:17px;height:17px;color:var(--faint)"')}<input id="pa-q" placeholder="Cerca brand, azienda, keyword, contatto…" value="${escAttr(pa.q)}" oninput="paSearch(this.value)" aria-label="Cerca tra i prospect"></div>
+    <div class="form-row ld-which"><select aria-label="Fascia" onchange="paSet('fascia',this.value)">${fasce.map(([k,l])=>`<option value="${k}"${pa.fascia===k?' selected':''}>${l}</option>`).join('')}</select></div>
+    <div class="form-row ld-which"><select aria-label="Stato" onchange="paSet('stato',this.value)"><option value="tutti">Tutti gli stati</option>${PA_STATI.map(s=>`<option${pa.stato===s?' selected':''}>${esc(s)}</option>`).join('')}</select></div>
+  </div>
+  ${shown.length?`<div class="table-wrap"><table class="pa-table"><thead><tr><th>Brand</th><th>Stima min/mese</th><th>Badge</th><th>Stelle</th><th>Fascia</th><th>Gap</th><th>Stato</th><th>Prossimo passo</th></tr></thead><tbody>
+  ${shown.map(p=>{const g=paGap(p), fi=paFiera(p);return `<tr class="pa-row" onclick="paOpen('${p.id}')">
+    <td class="az"><div>${esc(p.brand)}</div><div class="ld-sub">${esc((p.keywords||[]).slice(0,3).join(', ')||'—')}${fi?' · '+esc(fi):''}</div></td>
+    <td class="tnum">${p.qualificato_il?paEuro(p.stima_min_mese):'—'}</td>
+    <td class="tnum">${p.qualificato_il?(p.con_badge??0)+'/'+(p.prodotti??0):'—'}</td>
+    <td class="tnum">${p.stelle!=null?String(p.stelle).replace('.',','):'—'}</td>
+    <td>${paFasciaChip(paFascia(p))}</td>
+    <td class="tnum"><b>${g}</b>/10</td>
+    <td>${paStatoChip(p.stato)}</td>
+    <td class="email-cell">${esc(paNextLabel(p))}</td></tr>`}).join('')}
+  </tbody></table></div>${rows.length>400?`<p class="helptip" style="margin-top:10px">Mostro i primi 400 di ${rows.length}: usa la ricerca o i filtri.</p>`:''}`
+  :`<div class="empty"><h4>${pa.rows.length?'Nessun prospect con questi filtri':'Ancora nessun prospect'}</h4><p>${pa.rows.length?'Prova a togliere un filtro.':'Con l\'estensione Callforus Prospect cerca una keyword su amazon.it e premi «Salva brand».'}</p></div>`}
+  <p class="helptip" style="margin-top:12px"><b>Stima min/mese</b>: somma di acquisti del badge «acquistati nel mese scorso» × prezzo sulla prima pagina del brand. È un pavimento, utile per ordinare, non da citare al cliente. <b>Badge</b>: prodotti con badge sul totale letto. Ordine: fascia, poi punteggio gap, poi stima.</p>`;
+}
+
+/* ---- scheda del prospect ---- */
+function paOpen(id,keepScroll){
+  const p=paById(id);if(!p)return;
+  const prevScroll=keepScroll?document.querySelector('#modalRoot .modal')?.scrollTop:0;
+  const c=paCfg(), s=p.scheda||{}, fa=paFasciaAuto(p), g=paGap(p), fiAuto=paFieraAuto(p);
+  const inp=(f,label,ph,type)=>`<div class="form-row"><label>${label}</label><input ${type?`type="${type}"`:''} value="${escAttr(f==='fatturato'&&p[f]!=null?(+p[f]).toLocaleString('it-IT'):(p[f]??''))}" placeholder="${escAttr(ph||'')}" onchange="paF('${id}','${f}',this.value)"></div>`;
+  const yn=v=>v==null?'—':(v?'sì':'no');
+  const q=encodeURIComponent((p.ragione_sociale||p.brand)+'');
+  const gapRows=PA_GAP.map(x=>{
+    const g0=(p.gap||{})[x.k], auto=paGapAuto(p,x.k), val=typeof g0==='boolean'?g0:auto;
+    return `<tr><td>${esc(x.label)}</td><td class="tnum">${val?'+'+x.pt:'0'}</td><td style="text-align:right"><select aria-label="${escAttr(x.label)}" onchange="paGapSet('${id}','${x.k}',this.value)">
+      <option value="auto"${typeof g0!=='boolean'?' selected':''}>Automatico${auto==null?' (n/d)':auto?' (sì)':' (no)'}</option>
+      <option value="si"${g0===true?' selected':''}>Sì</option><option value="no"${g0===false?' selected':''}>No</option></select></td></tr>`;}).join('');
+  const probs=[0,1,2].map(i=>{const x=(p.problemi||[])[i]||{};return `<div class="pa-prob">
+    <div class="form-row"><label>Problema ${i+1}</label><input value="${escAttr(x.titolo||'')}" placeholder="Titolo breve" onchange="paProbSet('${id}',${i},'titolo',this.value)"></div>
+    <div class="pa-prob-d">
+      <textarea rows="2" placeholder="Cosa si vede nella scheda" onchange="paProbSet('${id}',${i},'cosa',this.value)">${esc(x.cosa||'')}</textarea>
+      <textarea rows="2" placeholder="Perché costa vendite" onchange="paProbSet('${id}',${i},'perche',this.value)">${esc(x.perche||'')}</textarea>
+      <textarea rows="2" placeholder="Cosa faremmo" onchange="paProbSet('${id}',${i},'azione',this.value)">${esc(x.azione||'')}</textarea>
+    </div></div>`}).join('');
+  const contact=p.contact_id?state.contacts.find(x=>x.id===p.contact_id):null;
+  const seq=p.seq_start?PA_SEQ.map(st=>{
+    const done=paStepDone(p,st), managed=paManaged(p,st), due=paSeqDue(p,st);
+    const doneDate=(p.seq_done||{})[st.id];
+    let right='';
+    if(managed)right=`<span class="email-cell">${done?'Inviata da Outbound':'Gestita da Outbound'}</span>`;
+    else right=`${st.tpl?`<button class="btn sm" onclick="paCopy('${id}','${st.tpl}')">Copia testo</button>`:''}<button class="btn sm ${done?'ghost':'primary'}" onclick="paStepToggle('${id}','${st.id}')">${done?'Annulla':'Fatto'}</button>`;
+    return `<tr><td><b>${esc(st.canale)}</b> · ${esc(st.label)}</td><td class="email-cell">${fmtD(due)}${done&&doneDate?' · fatto il '+fmtD(parseD(doneDate)):''}</td><td>${done?'<span class="chip reply"><span class="d"></span>Fatto</span>':(due<today()?'<span class="chip late"><span class="d"></span>In ritardo</span>':(sameDay(due,today())?'<span class="chip today"><span class="d"></span>Oggi</span>':'<span class="chip wait"><span class="d"></span>Da fare</span>'))}</td><td style="text-align:right;white-space:nowrap">${right}</td></tr>`;
+  }).join(''):'';
+  modal(`<div class="modal wide pa-modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>${esc(p.brand)}</h3>${paFasciaChip(paFascia(p))}<span class="pa-gap-pill">Gap ${g}/10</span><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <div class="pa-top">
+        <div class="form-row"><label>Stato</label><select onchange="paF('${id}','stato',this.value)">${PA_STATI.map(x=>`<option${p.stato===x?' selected':''}>${esc(x)}</option>`).join('')}</select></div>
+        <div class="pa-next"><span class="email-cell">Prossimo passo</span><br><b>${esc(paNextLabel(p))}</b></div>
+      </div>
+
+      <div class="pa-sec"><div class="pa-sec-h">1-2 · Amazon</div>
+        <div class="pa-metrics">
+          <div><span class="email-cell">Stima minima</span><b>${p.qualificato_il?paEuro(p.stima_min_mese)+'/mese':'—'}</b></div>
+          <div><span class="email-cell">Prodotti con badge</span><b>${p.qualificato_il?(p.con_badge??0)+' su '+(p.prodotti??0):'—'}</b></div>
+          <div><span class="email-cell">Acquisti/mese (badge)</span><b>${p.qualificato_il?(p.acquisti_mese??0).toLocaleString('it-IT'):'—'}</b></div>
+          <div><span class="email-cell">Prezzo medio</span><b>${p.prezzo_medio!=null?String(p.prezzo_medio).replace('.',',')+' €':'—'}</b></div>
+          <div><span class="email-cell">Stelle medie</span><b>${p.stelle!=null?String(p.stelle).replace('.',','):'—'}</b></div>
+          <div><span class="email-cell">Recensioni</span><b>${p.recensioni!=null?(+p.recensioni).toLocaleString('it-IT'):'—'}</b></div>
+        </div>
+        <p class="email-cell">Keyword: ${esc((p.keywords||[]).join(', ')||'—')} · ${p.qualificato_il?'qualificato il '+esc(fmtTs(p.qualificato_il)):'non ancora qualificato'}${p.url?` · <a href="${escAttr(p.url)}" target="_blank" rel="noopener noreferrer">ricerca del brand su Amazon</a>`:''}</p>
+        <div class="two-col">
+          <div class="form-row"><label>Fascia</label><select onchange="paF('${id}','fascia',this.value||null)"><option value=""${!p.fascia?' selected':''}>Automatica${fa?' ('+fa+')':''}</option>${['A','B','Scarto'].map(x=>`<option${p.fascia===x?' selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Fiera</label><input value="${escAttr(p.fiera||'')}" placeholder="${escAttr(fiAuto?'Trovata: '+fiAuto:'Nessuna fiera trovata')}" onchange="paF('${id}','fiera',this.value)"></div>
+        </div>
+      </div>
+
+      <div class="pa-sec"><div class="pa-sec-h">3 · Azienda e gap</div>
+        <div class="two-col">
+          ${inp('ragione_sociale','Ragione sociale','dal profilo del venditore o dal sito')}
+          ${inp('piva','Partita IVA')}
+          ${inp('sede','Sede')}
+          ${inp('sito_web','Sito web','https://…')}
+          ${inp('fatturato','Fatturato ultimo bilancio (€)','es. 3.500.000')}
+          ${inp('dipendenti','Dipendenti')}
+        </div>
+        <p class="email-cell" style="margin:6px 0 10px">Cerca: <a href="https://www.google.com/search?q=${q}+bilancio+fatturato" target="_blank" rel="noopener noreferrer">bilancio su Google</a> · <a href="https://www.reportaziende.it/cerca?q=${q}" target="_blank" rel="noopener noreferrer">reportaziende</a> · <a href="https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(p.brand)}" target="_blank" rel="noopener noreferrer">azienda su LinkedIn</a></p>
+        <table class="pa-gap"><tbody>
+          <tr><td>Fatturato ≥ 2 M€ (≥ 10 M€: 3 punti)</td><td class="tnum">${paFattPt(p)?'+'+paFattPt(p):'0'}</td><td style="text-align:right" class="email-cell">dal campo fatturato</td></tr>
+          ${gapRows}
+          <tr class="pa-gap-tot"><td>Punteggio</td><td class="tnum">${g}/10</td><td style="text-align:right" class="email-cell">${g>=c.gapMin?'pronto per l\'analisi video':`sotto ${c.gapMin}: resta in coda`}</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="pa-sec"><div class="pa-sec-h">4 · Analisi della scheda</div>
+        ${s.titolo?`<div class="pa-scheda">
+          <div><b>${esc(s.titolo.slice(0,140))}</b></div>
+          <div class="email-cell">${esc(s.asin||'')} · immagini ${s.immagini??'—'} · video ${yn(s.video)} · A+ ${yn(s.aplus)} · Brand Store ${yn(s.brand_store)} · stelle ${s.stelle!=null?String(s.stelle).replace('.',','):'—'} (${s.recensioni??'—'}) · venduto da ${esc(s.venditore||'—')}${s.badge_acquisti?' · '+esc(s.badge_acquisti):''}</div>
+          ${s.url?`<div class="email-cell"><a href="${escAttr(s.url)}" target="_blank" rel="noopener noreferrer">Apri la scheda su Amazon</a> · letta il ${esc(fmtTs(s.letta_il))}</div>`:''}
+        </div>`:`<div class="form-row"><label>Testo della scheda <span class="hint">(oppure inviala con l'estensione dalla pagina prodotto)</span></label><textarea id="pa-incolla" rows="4" placeholder="Sulla scheda Amazon: Ctrl+A, Ctrl+C e incolla qui">${esc(s.testo_incollato||'')}</textarea></div>`}
+        <div class="form-row"><label>Appunti della checklist <span class="hint">(cosa non va, in poche parole)</span></label><textarea id="pa-appunti" rows="2" onchange="paSchedaSet('${id}','appunti',this.value)" placeholder="es. solo 4 immagini, titolo tagliato su mobile, recensioni negative sulla chiusura">${esc(s.appunti||'')}</textarea></div>
+        <button class="btn ${p.problemi&&p.problemi.length?'':'primary'}" onclick="paAnalyze('${id}')" ${pa.busy[id]?'disabled':''}>${pa.busy[id]?'<span class="spinner"></span> Analizzo…':LD_I.search+((p.problemi||[]).length?'Rifai l\'analisi':'Analizza con Claude')}</button>
+        ${probs}
+        <div class="two-col">
+          <div class="form-row"><label>Caso studio</label><select onchange="paF('${id}','caso_studio',this.value)"><option value="">—</option>${c.casi.map(x=>`<option value="${escAttr(x.id)}"${p.caso_studio===x.id?' selected':''}>${esc(x.nome)}</option>`).join('')}</select></div>
+          <div class="form-row"><label>Nome breve del prodotto</label><input value="${escAttr(s.prodotto_breve||'')}" onchange="paSchedaSet('${id}','prodotto_breve',this.value)"></div>
+        </div>
+        ${inp('apertura','Frase di apertura del video')}
+        ${inp('video_url','Link al video','https://www.loom.com/share/…')}
+      </div>
+
+      <div class="pa-sec"><div class="pa-sec-h">5 · Contatto e sequenza</div>
+        <div class="two-col">
+          ${inp('contatto_nome','Nome per il saluto','es. Mario oppure dott. Rossi')}
+          ${inp('contatto_ruolo','Ruolo','titolare, responsabile e-commerce…')}
+          ${inp('linkedin_url','Profilo LinkedIn','https://www.linkedin.com/in/…')}
+          ${inp('email','Email','nome@azienda.it','email')}
+          ${inp('telefono','Telefono')}
+          <div class="form-row"><label>Promemoria</label><input type="date" value="${escAttr(p.prossima_azione||'')}" onchange="paF('${id}','prossima_azione',this.value)"></div>
+        </div>
+        <p class="email-cell" style="margin:6px 0 10px"><a href="https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent((p.ragione_sociale||p.brand)+' ')}" target="_blank" rel="noopener noreferrer">Cerca le persone dell'azienda su LinkedIn</a></p>
+        ${p.seq_start?`<table class="pa-gap"><tbody>${seq}</tbody></table>`:`<button class="btn primary" onclick="paStartSeq('${id}')">Avvia la sequenza da oggi</button>`}
+        <div class="pa-out">${contact?`<span class="email-cell">In Outbound: ${esc(statusOf(contact).label)}</span><button class="btn sm" onclick="paGoContact('${id}')">Apri il contatto</button>`:`<button class="btn" onclick="paToOutbound('${id}')">Passa l'email a Outbound</button><span class="email-cell">Crea il contatto con l'email già scritta, pianificata al giorno 5 della sequenza.</span>`}</div>
+      </div>
+
+      <div class="pa-sec"><div class="form-row"><label>Note</label><textarea rows="2" onchange="paF('${id}','note',this.value)">${esc(p.note||'')}</textarea></div></div>
+    </div>
+    <div class="modal-f" style="justify-content:space-between">
+      <button class="btn sm ghost danger" onclick="paDelete('${id}')">Elimina</button>
+      <button class="btn primary" onclick="closeModal()">Chiudi</button>
+    </div>
+  </div>`);
+  if(keepScroll){const b=document.querySelector('#modalRoot .modal');if(b)b.scrollTop=prevScroll||0;}
+}
+
+/* ---- aggiunta a mano, fiere, impostazioni, esportazione ---- */
+function paAddModal(){
+  modal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>Aggiungi brand</h3><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <p class="helptip">Il modo normale è l'estensione, che porta anche il link per la qualifica. Qui aggiungi un brand trovato altrove, per esempio in fiera.</p>
+      <div class="form-row"><label for="pa-add-b">Brand</label><input id="pa-add-b"></div>
+      <div class="form-row"><label for="pa-add-k">Keyword o categoria <span class="hint">(facoltativa)</span></label><input id="pa-add-k"></div>
+      <div class="form-row"><label for="pa-add-u">Link della ricerca Amazon filtrata per il brand <span class="hint">(facoltativo, serve per la qualifica)</span></label><input id="pa-add-u" placeholder="https://www.amazon.it/s?k=…&rh=…"></div>
+    </div>
+    <div class="modal-f"><button class="btn primary" onclick="paAddSave()">Aggiungi</button></div>
+  </div>`);
+  setTimeout(()=>document.getElementById('pa-add-b')?.focus(),50);
+}
+async function paAddSave(){
+  const b=(document.getElementById('pa-add-b')?.value||'').trim(), k=(document.getElementById('pa-add-k')?.value||'').trim(), u=(document.getElementById('pa-add-u')?.value||'').trim();
+  if(!b){toast('Scrivi il nome del brand','warn');return}
+  if(u&&!/^https:\/\/www\.amazon\.it\//.test(u)){toast('Il link deve essere una pagina di www.amazon.it','warn');return}
+  const {data,error}=await sb.rpc('prospects_add_brands',{p_keyword:k,p_items:[{brand:b,url:u||null}]});
+  if(error){toast('Non aggiunto: '+error.message,'err');return}
+  closeModal();toast(data&&data.nuovi?'Brand aggiunto':'Il brand c\'era già: ho aggiunto la keyword','ok');paLoad({silent:true});
+}
+function paFiereModal(){
+  const by={};pa.fiere.forEach(f=>{by[f.fiera]=(by[f.fiera]||0)+1});
+  const matched=pa.rows.filter(p=>paFieraAuto(p)).length;
+  modal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>Fiere</h3><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <p class="helptip">Carica l'elenco espositori di una fiera (HOMI, Ambiente o quella del settore): i brand che compaiono anche lì prendono 1 punto di gap e salgono in classifica. Oggi ${matched} ${matched===1?'prospect è':'prospect sono'} in almeno una fiera.</p>
+      ${Object.keys(by).length?`<table class="pa-gap"><tbody>${Object.entries(by).map(([f,n])=>`<tr><td>${esc(f)}</td><td class="tnum">${n} nomi</td><td style="text-align:right"><button class="btn sm ghost danger" onclick="paFieraDelete('${escAttr(f).replace(/'/g,"\\'")}')">Elimina</button></td></tr>`).join('')}</tbody></table>`:''}
+      <div class="form-row"><label for="pa-fiera-n">Nome della fiera</label><input id="pa-fiera-n" placeholder="es. HOMI Milano 2026"></div>
+      <div class="form-row"><label for="pa-fiera-l">Espositori, uno per riga</label><textarea id="pa-fiera-l" rows="8" placeholder="Copia la colonna dei nomi dal sito della fiera o da un foglio e incollala qui"></textarea></div>
+    </div>
+    <div class="modal-f"><button class="btn primary" id="pa-fiera-go" onclick="paFiereSave()">Carica elenco</button></div>
+  </div>`);
+}
+async function paFiereSave(){
+  const fiera=(document.getElementById('pa-fiera-n')?.value||'').trim().slice(0,120);
+  const nomi=[...new Set((document.getElementById('pa-fiera-l')?.value||'').split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(x=>x.length>=2&&x.length<=200))];
+  if(!fiera){toast('Scrivi il nome della fiera','warn');return}
+  if(!nomi.length){toast('Incolla almeno un nome','warn');return}
+  const b=document.getElementById('pa-fiera-go');if(b){b.disabled=true;b.innerHTML='<span class="spinner"></span> Carico…';}
+  try{
+    for(let i=0;i<nomi.length;i+=500){
+      const {error}=await sb.from('fiere_espositori').upsert(nomi.slice(i,i+500).map(nome=>({fiera,nome})),{onConflict:'fiera,nome_key',ignoreDuplicates:true});
+      if(error)throw error;
+    }
+    const {data,error}=await sb.from('fiere_espositori').select('fiera,nome,nome_key').limit(20000);
+    if(error)throw error;
+    pa.fiere=data||[];pa.fieraIdx=null;pa.fieraCache=new Map();
+    toast(`${nomi.length} nomi caricati per ${fiera}`,'ok');paFiereModal();
+  }catch(e){toast('Caricamento non riuscito: '+e.message,'err');if(b){b.disabled=false;b.textContent='Carica elenco';}}
+}
+async function paFieraDelete(f){
+  if(!confirm(`Eliminare l'elenco di ${f}?`))return;
+  const {error}=await sb.from('fiere_espositori').delete().eq('fiera',f);
+  if(error){toast('Non eliminato: '+error.message,'err');return}
+  pa.fiere=pa.fiere.filter(x=>x.fiera!==f);pa.fieraIdx=null;pa.fieraCache=new Map();paFiereModal();
+}
+function paSettingsModal(){
+  const c=paCfg();
+  modal(`<div class="modal wide" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>Soglie e testi dei prospect</h3><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <div class="field-lbl" style="margin:0">Fasce (fase 2) e punteggio (fase 3)</div>
+      <div class="two-col">
+        <div class="form-row"><label>Fascia A da (stima minima €/mese)</label><input id="ps-a" type="number" min="0" step="500" value="${c.sogliaA}"></div>
+        <div class="form-row"><label>…oppure prodotti con badge almeno</label><input id="ps-ba" type="number" min="1" value="${c.badgeA}"></div>
+        <div class="form-row"><label>Fascia B da (stima minima €/mese)</label><input id="ps-b" type="number" min="0" step="500" value="${c.sogliaB}"></div>
+        <div class="form-row"><label>Punteggio gap minimo per l'analisi</label><input id="ps-g" type="number" min="0" max="10" value="${c.gapMin}"></div>
+      </div>
+      <div class="form-row"><label>Il tuo nome nei messaggi</label><input id="ps-m" value="${escAttr(c.mittente)}" placeholder="${escAttr(state.templates.mittente||'es. Giuseppe Romano')}"></div>
+      <div class="field-lbl">Testi della sequenza</div>
+      <p class="helptip">Segnaposto: {nome} {brand} {problema1} {video} {prodotto} {caso} {mittente}. Se manca il nome, «Buongiorno {nome}» diventa «Buongiorno».</p>
+      ${Object.keys(PA_TPL_DEFAULT).map(k=>`<div class="form-row"><label>${esc(PA_TPL_LABEL[k])}</label>${k==='emailOggetto'?`<input id="ps-t-${k}" value="${escAttr(c.tpl[k])}">`:`<textarea id="ps-t-${k}" rows="${k==='email'?8:4}">${esc(c.tpl[k])}</textarea>`}</div>`).join('')}
+      <div class="field-lbl">Casi studio</div>
+      ${c.casi.map((x,i)=>`<div class="two-col pa-caso"><div class="form-row"><label>Nome</label><input id="ps-cn-${i}" value="${escAttr(x.nome)}"></div><div class="form-row"><label>Categorie a cui si adatta</label><input id="ps-cc-${i}" value="${escAttr(x.categorie)}"></div><div class="form-row" style="grid-column:1/3"><label>Testo usato nei messaggi</label><input id="ps-ct-${i}" value="${escAttr(x.testo)}"></div></div>`).join('')}
+    </div>
+    <div class="modal-f" style="justify-content:space-between"><button class="btn sm ghost" onclick="paSettingsReset()">Ripristina i testi predefiniti</button><button class="btn primary" onclick="paSettingsSave()">Salva</button></div>
+  </div>`);
+}
+function paSettingsSave(){
+  const c=paCfg(), v=id=>document.getElementById(id)?.value;
+  c.sogliaA=Math.max(0,+v('ps-a')||0); c.sogliaB=Math.max(0,+v('ps-b')||0); c.badgeA=Math.max(1,+v('ps-ba')||1); c.gapMin=Math.min(10,Math.max(0,+v('ps-g')||0));
+  if(c.sogliaB>c.sogliaA){toast('La soglia B deve stare sotto la soglia A','warn');return}
+  c.mittente=(v('ps-m')||'').trim();
+  Object.keys(PA_TPL_DEFAULT).forEach(k=>{c.tpl[k]=v('ps-t-'+k)||PA_TPL_DEFAULT[k]});
+  c.casi=c.casi.map((x,i)=>({...x,nome:(v('ps-cn-'+i)||x.nome).trim(),categorie:(v('ps-cc-'+i)||'').trim(),testo:(v('ps-ct-'+i)||x.testo).trim()}));
+  paSaveCfg();closeModal();render();toast('Impostazioni salvate','ok');
+}
+function paSettingsReset(){
+  if(!confirm('Ripristinare testi e casi studio predefiniti? Le soglie restano come sono.'))return;
+  const c=paCfg();c.tpl={...PA_TPL_DEFAULT};c.casi=PA_CASI_DEFAULT.map(x=>({...x}));paSaveCfg();paSettingsModal();
+}
+function paExportCsv(){
+  const rows=pa.tab==='oggi'?pa.rows:paRows();
+  if(!rows.length){toast('Niente da esportare','warn');return}
+  const cell=v=>{const t=String(v??'').replace(/\s*[\r\n]+\s*/g,' ');return /[";,]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
+  const num=v=>v==null?'':String(v).replace('.',',');
+  const head=['brand','keyword','fascia','stima min €/mese','prodotti','con badge','acquisti/mese','prezzo medio','stelle','recensioni','fiera','ragione sociale','p.iva','fatturato','gap','problema 1','problema 2','problema 3','caso studio','video','contatto','ruolo','linkedin','email','telefono','stato','prossimo passo','url ricerca'];
+  const out=rows.map(p=>{const pr=p.problemi||[];return [p.brand,(p.keywords||[]).join(', '),paFascia(p)||'',p.stima_min_mese,p.prodotti,p.con_badge,p.acquisti_mese,num(p.prezzo_medio),num(p.stelle),p.recensioni,paFiera(p)||'',p.ragione_sociale,p.piva,p.fatturato,paGap(p),pr[0]?.titolo,pr[1]?.titolo,pr[2]?.titolo,p.caso_studio,p.video_url,p.contatto_nome,p.contatto_ruolo,p.linkedin_url,p.email,p.telefono,p.stato,paNextLabel(p),p.url].map(cell).join(';')});
+  const url=URL.createObjectURL(new Blob(['\ufeff'+[head.join(';'),...out].join('\r\n')],{type:'text/csv;charset=utf-8'}));
+  const a=Object.assign(document.createElement('a'),{href:url,download:'prospect-amazon-'+isoD(today())+'.csv'});
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast(`${rows.length} prospect esportati`,'ok');
 }
 
 /* =======================================================

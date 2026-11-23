@@ -1,0 +1,28 @@
+#cfp-panel{position:fixed;right:16px;bottom:16px;z-index:2147483000;width:300px;max-height:72vh;display:flex;flex-direction:column;
+  background:#fff;color:#0E0F12;border:1px solid #d9d9d6;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);
+  font:13px/1.45 Montserrat,Arial,Helvetica,sans-serif;overflow:hidden}
+#cfp-panel *{box-sizing:border-box;font-family:inherit}
+#cfp-panel .cfp-h{display:flex;align-items:center;gap:6px;padding:9px 10px 9px 12px;background:#0E0F12;color:#fff;font-size:13px}
+#cfp-panel .cfp-logo{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;background:#FCCD10;color:#0E0F12;font-weight:800;font-size:12px}
+#cfp-panel .cfp-sp{flex:1}
+#cfp-panel .cfp-ic{background:transparent;border:0;color:#fff;font-size:18px;line-height:1;cursor:pointer;padding:0 6px}
+#cfp-panel .cfp-b{padding:10px 12px;overflow:auto}
+#cfp-panel.cfp-closed{width:auto}
+#cfp-panel.cfp-closed .cfp-b{display:none}
+#cfp-panel .cfp-user{font-size:12px;color:#55585f;margin-bottom:8px}
+#cfp-panel .cfp-sec{border-top:1px solid #ececea;padding:10px 0}
+#cfp-panel .cfp-t{font-weight:700;margin-bottom:4px}
+#cfp-panel .cfp-p{margin:3px 0}
+#cfp-panel .cfp-mute{color:#6B6E76;font-size:11.5px}
+#cfp-panel .cfp-lbl{display:block;font-size:12px;color:#55585f}
+#cfp-panel input{width:100%;margin-top:3px;padding:6px 8px;border:1px solid #cfcfcb;border-radius:7px;font-size:13px;color:#0E0F12;background:#fff}
+#cfp-panel .cfp-btn{display:block;width:100%;margin-top:8px;padding:8px 10px;border:0;border-radius:8px;background:#FCCD10;color:#0E0F12;font-weight:700;font-size:13px;cursor:pointer}
+#cfp-panel .cfp-btn:hover{filter:brightness(.96)}
+#cfp-panel .cfp-btn:disabled{opacity:.45;cursor:not-allowed}
+#cfp-panel .cfp-ghost{background:#f2f2ef}
+#cfp-panel .cfp-log{border-top:1px solid #ececea;padding-top:8px;font-size:11.5px;max-height:180px;overflow:auto}
+#cfp-panel .cfp-log:empty{display:none}
+#cfp-panel .cfp-line{padding:2px 0;color:#3b3d42}
+#cfp-panel .cfp-ok{color:#1d6b3a}
+#cfp-panel .cfp-warn{color:#8a5a00}
+#cfp-panel .cfp-err{color:#b3261e}

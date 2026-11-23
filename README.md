@@ -36,6 +36,17 @@ L'app parte in **modalità test**: gli invii sono simulati finché non la spegni
 
 La pagina scrive una richiesta in `lead_searches`; il database chiama un webhook n8n che cerca (per esempio con Apify su Google Maps) e salva i risultati in `leads`. Quel flusso va creato per Callforus: non è incluso e quello di Flowline non va riusato. Servono due segreti nel Vault di Supabase, `lead_search_webhook_url` e `lead_search_webhook_key` (la chiave arriva nell'header `x-callforus-key`). Finché non ci sono, la pagina avvisa «Webhook n8n non configurato» e il resto di Outbound funziona normalmente.
 
+## Prospect Amazon
+
+Pagina «Prospect Amazon» per il flusso di acquisizione clienti: brand trovati su Amazon.it, qualifica, punteggio gap, analisi della scheda con Claude, video e sequenza LinkedIn → email → telefono → chiusura.
+
+1. **Database.** Esegui una volta `supabase/prospects.sql` nel SQL Editor (dopo `setup.sql`). Crea `prospects`, `fiere_espositori` e la funzione `prospects_add_brands`, con le stesse regole di accesso di Outbound (`ob_users`).
+2. **Estensione Chrome** (cartella `extension/`): in Chrome apri `chrome://extensions`, attiva «Modalità sviluppatore», premi «Carica estensione non pacchettizzata» e scegli la cartella `extension`. Clicca l'icona Callforus Prospect e accedi con l'account di Outbound.
+   - Pagina dei risultati di amazon.it: «Salva brand» salva i brand del filtro Marca con il link della ricerca filtrata; «Qualifica la coda» apre quelle ricerche con pause di 6-12 secondi e salva stima minima, badge, prezzo, stelle e recensioni.
+   - Pagina prodotto: «Invia scheda» salva titolo, punti elenco, immagini, video, A+, Brand Store, stelle e venditore; se Amazon li mostra, anche ragione sociale, partita IVA e indirizzo del venditore.
+   - Volumi bassi: Amazon non ama le letture automatiche e può chiedere il captcha. L'estensione si ferma da sola.
+3. **Nell'app**: «Soglie e testi» per fasce, punteggio minimo, nome nei messaggi, testi della sequenza e casi studio. «Fiere» per caricare gli elenchi espositori. L'analisi usa la chiave Anthropic già inserita nelle Impostazioni. «Passa l'email a Outbound» crea il contatto con l'email già scritta, pianificata al giorno 5 della sequenza: da lì invio, follow-up e risposte sono quelli di Outbound.
+
 ## Dove pubblicarlo
 
 Il file contiene l'indirizzo e la chiave pubblica di Supabase: sono pensati per stare nel browser e i dati sono protetti dal login e dalle regole del database (`ob_users`), ma non c'è motivo di renderli pubblici. Meglio un repository **privato** e un hosting con accesso limitato, oppure aprire il file in locale.
@@ -49,3 +60,5 @@ Home, Newsletter, Richieste, Contabilità, Calendario, Password, Messaggi, Bache
 - `index.html`: l'applicazione
 - `supabase/setup.sql`: tabelle, regole di accesso, statistiche
 - `supabase/functions/ob-track/index.ts`: conteggio anonimo di aperture e clic
+- `supabase/prospects.sql`: tabelle dei Prospect Amazon
+- `extension/`: estensione Chrome «Callforus Prospect»
