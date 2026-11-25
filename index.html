@@ -695,6 +695,15 @@ body[data-view="prospect"] .hero{--hb:#FCCD10;--hi:#0E0F12}
 @media(max-width:900px){.user-box .email-cell{display:none}}
 .user-box .email-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .span-3{grid-column:span 3}
+/* ---------- Fiere ---------- */
+body[data-view="fiere"] .hero{--hb:#FCCD10;--hi:#0E0F12}
+.fe-bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:4px 0 14px}
+.fe-prog{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.fe-chk{display:flex;gap:8px;align-items:center;font-size:14px;white-space:nowrap}
+.fe-desc{max-width:340px;white-space:normal;line-height:1.4}
+.fe-table td{vertical-align:top}
+.fe-table input[type=checkbox],.fe-chk input{width:16px;height:16px;accent-color:var(--brand)}
+.fe-modal .modal-b{gap:10px}
 </style>
 </head>
 <body class="locked">
@@ -1861,6 +1870,7 @@ function sectionOf(v){return 'outbound'}
 const NAV=[
   {id:'dashboard',label:'Dashboard',icon:'M3 3v18h18 M7 14l3-3 3 3 5-6'},
   {id:'prospect',label:'Prospect Amazon',icon:'M3 7h18l-2 12H5z M8 7V5a4 4 0 0 1 8 0v2'},
+  {id:'fiere',label:'Fiere',icon:'M3 21h18 M5 21V9l7-5 7 5v12 M9 21v-6h6v6'},
   {id:'lead',label:'Ricerca lead',icon:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M21 21l-4.35-4.35'},
   {id:'contatti',label:'Contatti',icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75'},
   {id:'pianifica',label:'Pianificazione',icon:'M3 4h18v18H3z M16 2v4 M8 2v4 M3 10h18 M8 14h2 M14 14h2 M8 18h2'},
@@ -1884,6 +1894,7 @@ function renderNav(){
     if(n.id==='risposte'&&newRep) badge=`<span class="badge ok">${newRep}</span>`;
     if(n.id==='pianifica'&&backlog) badge=`<span class="badge plain">${backlog}</span>`;
     if(n.id==='lead'&&ldBusy()) badge=`<span class="badge">in corso</span>`;
+    if(n.id==='fiere'&&fe.running) badge=`<span class="badge">in corso</span>`;
     if(n.id==='prospect'&&pa.loaded){const t=paTasks().length;if(t)badge=`<span class="badge">${t}</span>`;}
     const on=state.view===n.id;
     return `<button class="${on?'active':''}" ${on?'aria-current="page"':''} onclick="go('${n.id}')">${ico(n.icon)}<span>${n.label}</span>${badge}</button>`;
@@ -1947,6 +1958,7 @@ function heroCopy(){
   const backlog=state.contacts.filter(isUnplanned).length;
   if(state.view==='lead') return ldHeroCopy();
   if(state.view==='prospect') return paHeroCopy();
+  if(state.view==='fiere') return feHeroCopy();
   if(state.view==='stats') return obHeroCopy();
   if(!n) return {t:'Benvenuto in Outbound.',l:'Importa una lista di contatti in CSV o Excel: le colonne vengono riconosciute in automatico.'};
   switch(state.view){
@@ -1995,6 +2007,7 @@ function render(){
   } else { primary=`<button class="btn primary" onclick="pickFile()">${I.plus}Importa contatti</button>`; importPrimary=true; }
   if(state.view==='lead'){ ta.innerHTML=ldTopActions(); }
   else if(state.view==='prospect'){ ta.innerHTML=paTopActions(); }
+  else if(state.view==='fiere'){ ta.innerHTML=feTopActions(); }
   else if(state.view==='stats'){ ta.innerHTML=`<button class="btn" onclick="obLoad(true)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="lbl">Aggiorna</span></button>`; }
   else ta.innerHTML=primary
     +(has&&!importPrimary?`<button class="btn" onclick="pickFile()">${I.plus}<span class="lbl">Importa</span></button>`:'')
@@ -2009,6 +2022,7 @@ function render(){
   else if(state.view==='risposte')C.innerHTML=viewRisposte();
   else if(state.view==='lead'){ C.innerHTML=viewLead(); }
   else if(state.view==='prospect'){ C.innerHTML=viewProspect(); }
+  else if(state.view==='fiere'){ C.innerHTML=viewFiere(); }
   else if(state.view==='stats'){ C.innerHTML=viewStats(); }
   if(state.view==='coda')bindCodaInputs();
   if(state.view==='pianifica')bindPianifica();
@@ -2630,7 +2644,7 @@ function emptyState(){
    MODALS
    ======================================================= */
 function modal(html){document.getElementById('modalRoot').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()">${html}</div>`}
-function closeModal(){const wasPa=!!document.querySelector('#modalRoot .pa-modal');document.getElementById('modalRoot').innerHTML='';if(wasPa&&state.view==='prospect')render()}
+function closeModal(){const wasPa=!!document.querySelector('#modalRoot .pa-modal,#modalRoot .fe-modal');document.getElementById('modalRoot').innerHTML='';if(wasPa&&(state.view==='prospect'||state.view==='fiere'))render()}
 
 /* ---- import mapping modal ---- */
 let _importData=null;
@@ -3122,7 +3136,7 @@ async function authInit(){
       state.contacts=[]; save(LS.contacts,[]);                 // niente dati rimasti sul dispositivo
       ld.loaded=false;ld.searches=[];ld.leads=[];ld.sel.clear();clearTimeout(ld.pollT);
       ob.loaded=false;ob.rows=[];ob.links=[];
-      paReset();
+      paReset();feReset();
       render();
     }
     else if(ev==='SIGNED_IN' && session && was!==session.user.id){auth.allowed=null;render();setTimeout(authAfterLogin,0);}
@@ -3134,7 +3148,7 @@ async function authInit(){
 async function authAfterLogin(){
   const {data,error}=await sb.rpc('ob_is_user');
   auth.allowed=(!error&&data===true);
-  if(auth.allowed){ initSupabase(); ldLoad({silent:state.view!=='lead'}); paLoad({silent:state.view!=='prospect'}); }
+  if(auth.allowed){ initSupabase(); ldLoad({silent:state.view!=='lead'}); paLoad({silent:state.view!=='prospect'}); feLoad({silent:state.view!=='fiere'}); }
   render();
 }
 async function authLogin(ev){
@@ -4141,7 +4155,7 @@ async function paFiereSave(){
   }catch(e){toast('Caricamento non riuscito: '+e.message,'err');if(b){b.disabled=false;b.textContent='Carica elenco';}}
 }
 async function paFieraDelete(f){
-  if(!confirm(`Eliminare l'elenco di ${f}?`))return;
+  if(!confirm(`Eliminare l'elenco di ${f}? Si cancellano anche le analisi fatte nella pagina Fiere.`))return;
   const {error}=await sb.from('fiere_espositori').delete().eq('fiera',f);
   if(error){toast('Non eliminato: '+error.message,'err');return}
   pa.fiere=pa.fiere.filter(x=>x.fiera!==f);pa.fieraIdx=null;pa.fieraCache=new Map();paFiereModal();
@@ -4192,6 +4206,451 @@ function paExportCsv(){
   const a=Object.assign(document.createElement('a'),{href:url,download:'prospect-amazon-'+isoD(today())+'.csv'});
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   toast(`${rows.length} prospect esportati`,'ok');
+}
+
+/* =======================================================
+   FIERE — lista espositori → analisi con Claude e ricerca web → Outbound
+   Tabella fiere_espositori. Regole: marchio famoso = scarto;
+   fatturato fuori dalla fascia scelta = scarto; senza email o fatturato = da verificare.
+   ======================================================= */
+const FE_ESITI=['Da analizzare','Idoneo','Da verificare','Scartato','In Outbound'];
+const fe={loaded:false,loading:false,err:'',rows:[],fiera:'',q:'',esito:'tutti',soloIt:true,sel:new Set(),running:false,stop:false,prog:null,noFetch:false,searches:0};
+
+function feCfg(){
+  if(!state.config.fiere||typeof state.config.fiere!=='object')state.config.fiere={};
+  const c=state.config.fiere;
+  if(c.min==null)c.min=100000;
+  if(c.max==null)c.max=5000000;
+  if(c.fattND==null)c.fattND='verifica';      // 'verifica' | 'tieni'
+  if(c.concorrenza==null)c.concorrenza=2;
+  if(c.settore==null)c.settore='Casa e cucina';
+  return c;
+}
+const feById=id=>fe.rows.find(r=>String(r.id)===String(id));
+function feIsIt(r){const p=String(r.paese||'').trim().toLowerCase();return !p||/^(it|ita|italia|italy|italien|italie)$/.test(p)||p.includes('ital')}
+function feEuro(n){return n==null||n===''?'—':(+n>=1e6?(Math.round(+n/1e5)/10).toLocaleString('it-IT')+' M€':Math.round(+n).toLocaleString('it-IT')+' €')}
+function feSito(s){s=String(s||'').trim();if(!s)return '';if(!/^https?:\/\//i.test(s))s='https://'+s.replace(/^\/+/,'');return s.replace(/\/+$/,'')}
+
+/* ---- dati ---- */
+async function feLoad(opts={}){
+  if(!sb||!auth.allowed||fe.loading)return;
+  fe.loading=true; if(state.view==='fiere'&&!opts.silent)render();
+  try{
+    const {data,error}=await sb.from('fiere_espositori').select('*').order('nome').limit(20000);
+    if(error)throw error;
+    fe.rows=data||[]; fe.loaded=true; fe.err='';
+    const fiere=feFiere();
+    if(!fe.fiera||!fiere.some(f=>f.nome===fe.fiera))fe.fiera=fiere[0]?.nome||'';
+  }catch(e){fe.err=e.message||String(e)}
+  fe.loading=false;
+  if(state.view==='fiere')render(); else renderNav();
+}
+function feReset(){fe.stop=true;Object.assign(fe,{loaded:false,loading:false,err:'',rows:[],sel:new Set(),running:false,prog:null})}
+function feFiere(){
+  const m=new Map();
+  fe.rows.forEach(r=>{const x=m.get(r.fiera)||{nome:r.fiera,n:0,da:0,ok:0};x.n++;if(r.esito==='Da analizzare')x.da++;if(r.esito==='Idoneo')x.ok++;m.set(r.fiera,x)});
+  return [...m.values()].sort((a,b)=>a.nome.localeCompare(b.nome,'it'));
+}
+function feVisible(){
+  const q=fe.q.trim().toLowerCase();
+  return fe.rows.filter(r=>{
+    if(fe.fiera&&r.fiera!==fe.fiera)return false;
+    if(fe.soloIt&&!feIsIt(r))return false;
+    if(fe.esito!=='tutti'&&r.esito!==fe.esito)return false;
+    if(q&&![r.nome,r.ragione_sociale,r.email,r.categoria,r.descrizione].some(x=>String(x||'').toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+async function feSave(id,patch,opts={}){
+  const r=feById(id);if(!r)return false;
+  const before={...r};Object.assign(r,patch);
+  const {data,error}=await sb.from('fiere_espositori').update(patch).eq('id',r.id).select().single();
+  if(error){Object.assign(r,before);toast('Salvataggio non riuscito: '+error.message,'err');return false}
+  Object.assign(r,data);
+  if(opts.reopen)feOpen(id,true);
+  if(opts.render!==false&&state.view==='fiere'&&!document.querySelector('#modalRoot .modal'))softRender();
+  return true;
+}
+
+/* ---- regole ---- */
+function feValuta(o){
+  const c=feCfg();
+  if(o.famosa)return {esito:'Scartato',motivo:'Marchio noto'+(o.famosa_motivo?': '+o.famosa_motivo:'')};
+  if(o.fatturato!=null&&o.fatturato!==''){
+    if(+o.fatturato<c.min)return {esito:'Scartato',motivo:`Fatturato ${feEuro(o.fatturato)}, sotto ${feEuro(c.min)}`};
+    if(+o.fatturato>c.max)return {esito:'Scartato',motivo:`Fatturato ${feEuro(o.fatturato)}, sopra ${feEuro(c.max)}`};
+  }
+  if(!o.email)return {esito:'Da verificare',motivo:'Email non trovata'};
+  if((o.fatturato==null||o.fatturato==='')&&c.fattND==='verifica')return {esito:'Da verificare',motivo:'Fatturato non trovato'};
+  return {esito:'Idoneo',motivo:o.fatturato!=null?`Fatturato ${feEuro(o.fatturato)}${o.fatturato_anno?' ('+o.fatturato_anno+')':''}`:'Fatturato non trovato, tenuto'};
+}
+// dopo aver cambiato i criteri: ricalcola gli esiti automatici
+async function feRivaluta(){
+  const todo=fe.rows.filter(r=>r.analizzato_il&&!r.esito_manuale&&r.esito!=='In Outbound');
+  let n=0;
+  for(const r of todo){const v=feValuta(r);if(v.esito!==r.esito||v.motivo!==r.motivo){await feSave(r.id,v,{render:false});n++;}}
+  render(); if(n)toast(`${n} esiti aggiornati con i nuovi criteri`,'ok');
+}
+
+/* ---- analisi con Claude + ricerca web ---- */
+const FE_SYS=`Sei un ricercatore commerciale. Per l'azienda indicata, usando la ricerca web e la lettura delle pagine, raccogli:
+1. Sito ufficiale (correggilo se quello fornito è sbagliato o manca).
+2. Email aziendali pubblicate sul sito ufficiale o in fonti ufficiali (pagina contatti, footer, note legali). Preferisci indirizzi commerciali, marketing, export o info. Escludi le PEC (domini come pec.it, legalmail.it, pec.*). Non inventare e non dedurre indirizzi: se non li trovi, lista vuota.
+3. Descrizione in italiano di 2-3 frasi: cosa produce, categorie di prodotto, a chi vende, eventuali punti distintivi (made in Italy, materiali, anni di attività). Serve a personalizzare un'email commerciale.
+4. Ragione sociale e fatturato dell'ultimo bilancio disponibile, con anno e URL della fonte. Cerca "<ragione sociale> fatturato" su siti italiani di dati aziendali (es. reportaziende.it, ufficiocamerale.it, informazione-aziende.it, atoka). Se trovi solo una fascia, usa il valore centrale e scrivilo nella fonte. Se non lo trovi: null. Non stimare a occhio.
+5. Numero di dipendenti, se lo trovi.
+6. famosa: true se il marchio è noto al grande pubblico a livello nazionale o internazionale, oppure appartiene a un grande gruppo o multinazionale; false per PMI e marchi di nicchia. Motivo in una frase.
+7. amazon: "si" se trovi prodotti del marchio in vendita su amazon.it, "no" se cercando non li trovi, "nd" se non hai potuto verificare.
+Fai al massimo 5 ricerche e leggi al massimo 4 pagine. Alla fine rispondi SOLO con questo JSON, senza testo prima o dopo:
+{"sito":"","ragione_sociale":"","emails":[],"telefono":"","descrizione":"","fatturato":null,"fatturato_anno":null,"fatturato_fonte":"","dipendenti":null,"famosa":false,"famosa_motivo":"","amazon":"nd","note":""}`;
+
+async function feClaude(userText){
+  const key=state.config.anthropicKey;
+  if(!key)throw new Error('Manca la chiave API Anthropic: inseriscila in Impostazioni → Generazione AI');
+  const tools=[{type:'web_search_20250305',name:'web_search',max_uses:5,user_location:{type:'approximate',country:'IT'}}];
+  if(!fe.noFetch)tools.push({type:'web_fetch_20250910',name:'web_fetch',max_uses:4,max_content_tokens:8000});
+  const headers=Object.assign({'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    fe.noFetch?{}:{'anthropic-beta':'web-fetch-2025-09-10'},
+    state.config.anthropicWorkspace?{'anthropic-workspace-id':state.config.anthropicWorkspace}:{});
+  const messages=[{role:'user',content:userText}];
+  let data=null;
+  for(let turn=0;turn<5;turn++){
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers,body:JSON.stringify({model:MODEL,max_tokens:2500,system:FE_SYS,tools,messages})});
+    if(!r.ok){
+      const t=await r.text();
+      if(!fe.noFetch&&r.status===400&&/web_fetch|beta/i.test(t)){fe.noFetch=true;return feClaude(userText);}
+      if(/web.?search/i.test(t)&&/(enable|disabled|not allowed|permission)/i.test(t))throw new Error('La ricerca web non è attiva per la tua organizzazione: attivala nelle impostazioni della Console Anthropic');
+      throw new Error('Anthropic '+r.status+': '+t.slice(0,220));
+    }
+    data=await r.json();
+    const u=data.usage||{};
+    recordUsage((u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),u.output_tokens||0);
+    fe.searches+=(u.server_tool_use&&u.server_tool_use.web_search_requests)||0;
+    if(data.stop_reason!=='pause_turn')break;
+    messages.push({role:'assistant',content:data.content});
+  }
+  const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+  const i=txt.lastIndexOf('{"'), j=txt.lastIndexOf('}');
+  let js=i>=0&&j>i?txt.slice(i,j+1):'';
+  if(!js){const m=txt.match(/\{[\s\S]*\}/);js=m?m[0]:''}
+  if(!js)throw new Error('risposta senza dati');
+  try{return JSON.parse(js)}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);throw e}
+}
+function feNum(v){
+  if(v==null||v==='')return null;
+  if(typeof v==='number')return isFinite(v)?Math.round(v):null;
+  const t=String(v).toLowerCase(), mult=/milion|mln|\bmio\b|m€|\bm\b/.test(t)?1e6:/\bmila\b|\bk\b/.test(t)?1e3:1;
+  let x=t.replace(/[^\d.,]/g,'');
+  if(!x)return null;
+  if(/,\d{1,2}$/.test(x))x=x.replace(/\./g,'').replace(',','.');
+  else if(/\.\d{1,2}$/.test(x)&&mult>1)x=x.replace(/,/g,'');
+  else x=x.replace(/[.,](?=\d{3}(\D|$))/g,'').replace(',','.');
+  const n=+x;return isFinite(n)?Math.round(n*mult):null;
+}
+function feCleanEmails(list,sito){
+  const arr=(Array.isArray(list)?list:String(list||'').split(/[,;\s]+/)).map(x=>String(x||'').trim().toLowerCase()).filter(x=>/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(x));
+  const noPec=arr.filter(x=>!/(^|[.@])(pec|legalmail|pecimprese|postacert|arubapec|registerpec)\b/.test(x)&&!/@pec\./.test(x));
+  const uniq=[...new Set(noPec)];
+  const dom=(()=>{try{return new URL(feSito(sito)).hostname.replace(/^www\./,'')}catch(e){return ''}})();
+  const rank=e=>(dom&&e.endsWith('@'+dom)?0:1)*10+(/^(commerciale|sales|vendite|export|marketing|info|contatti|contact|hello|ciao)@/.test(e)?0:/^(amministrazione|admin|fatture|billing|privacy|gdpr|noreply|no-reply|lavora|jobs|hr|cv)@/.test(e)?5:2);
+  return uniq.sort((a,b)=>rank(a)-rank(b));
+}
+async function feAnalyzeOne(r){
+  const o=await feClaude(JSON.stringify({azienda:r.nome,ragione_sociale:r.ragione_sociale||undefined,sito:r.sito||undefined,paese:r.paese||undefined,categoria:r.categoria||undefined,fiera:r.fiera},null,1));
+  const sito=feSito(o.sito||r.sito);
+  const emails=feCleanEmails([...(o.emails||[]),...(r.email?[r.email]:[])],sito);
+  const num=feNum;
+  const patch={
+    sito:sito||null, ragione_sociale:String(o.ragione_sociale||r.ragione_sociale||'').slice(0,200)||null,
+    emails, email:emails[0]||null, telefono:String(o.telefono||'').slice(0,60)||r.telefono||null,
+    descrizione:String(o.descrizione||'').slice(0,900)||null,
+    fatturato:num(o.fatturato), fatturato_anno:num(o.fatturato_anno), fatturato_fonte:String(o.fatturato_fonte||'').slice(0,400)||null,
+    dipendenti:num(o.dipendenti), famosa:o.famosa===true, famosa_motivo:String(o.famosa_motivo||'').slice(0,300)||null,
+    amazon:['si','no','nd'].includes(o.amazon)?o.amazon:'nd',
+    analizzato_il:new Date().toISOString(), esito_manuale:false,
+    data:{...(r.data||{}),note_analisi:String(o.note||'').slice(0,500)},
+  };
+  Object.assign(patch,feValuta(patch));
+  await feSave(r.id,patch,{render:false});
+}
+async function feRun(ids){
+  if(fe.running){fe.stop=true;toast('Mi fermo dopo le analisi in corso…');return}
+  const list=(ids||feVisible().filter(r=>r.esito==='Da analizzare').map(r=>r.id)).map(feById).filter(Boolean);
+  if(!list.length){toast('Niente da analizzare in questa vista','warn');return}
+  if(!state.config.anthropicKey){toast('Manca la chiave API Anthropic: inseriscila in Impostazioni → Generazione AI','warn');return}
+  if(list.length>30&&!confirm(`Analizzo ${list.length} aziende. Ogni analisi fa qualche ricerca web a pagamento sul tuo account Anthropic. Procedo?`))return;
+  fe.running=true;fe.stop=false;fe.searches=0;fe.prog={done:0,tot:list.length,err:0,last:''};render();
+  const c=feCfg();let idx=0;
+  const worker=async()=>{
+    while(!fe.stop&&idx<list.length){
+      const r=list[idx++];
+      fe.prog.last=r.nome;
+      try{await feAnalyzeOne(r)}
+      catch(e){fe.prog.err++;fe.prog.lastErr=e.message;
+        if(/chiave API|ricerca web non è attiva|401|403/.test(e.message)){fe.stop=true;toast(e.message,'err')}
+        else await feSave(r.id,{data:{...(r.data||{}),errore_analisi:e.message.slice(0,300)}},{render:false});}
+      fe.prog.done++;
+      if(state.view==='fiere'&&!document.querySelector('#modalRoot .modal'))softRender();
+    }
+  };
+  await Promise.all(Array.from({length:Math.max(1,Math.min(4,+c.concorrenza||2))},worker));
+  const p=fe.prog;fe.running=false;fe.stop=false;fe.prog=null;render();
+  toast(`Analisi finita: ${p.done-p.err} aziende${p.err?` · ${p.err} non riuscite${p.lastErr?' ('+p.lastErr.slice(0,80)+')':''}`:''} · ${fe.searches} ricerche web`,p.err?'warn':'ok');
+}
+
+/* ---- verso Outbound ---- */
+function feToOutbound(ids){
+  const have=ldContactEmails();
+  const pick=ids.map(feById).filter(Boolean);
+  const ok=[];let skip=0;
+  for(const r of pick){
+    const e=(r.email||'').trim().toLowerCase();
+    if(!e||have.has(e)||r.esito==='In Outbound'||r.esito==='Scartato'){skip++;continue}
+    have.add(e);ok.push(r);
+  }
+  if(!ok.length){toast('Tra quelli scelti non c\'è nessuna azienda idonea con email','warn');return}
+  const c=feCfg();
+  const amz=r=>r.amazon==='si'?' Vende già su Amazon.it.':r.amazon==='no'?' Non risulta in vendita su Amazon.it.':'';
+  ok.forEach(r=>{
+    const k=mkContact({azienda:r.ragione_sociale||r.nome,email:r.email,sitoWeb:r.sito||'',sede:r.paese||'',
+      settore:r.categoria||c.settore,
+      descrizione:`${r.descrizione||''}${amz(r)} Espositore a ${r.fiera}.`.trim()});
+    state.contacts.push(k);
+    r._newContact=k.id;
+  });
+  persist();
+  ok.forEach(r=>{feSave(r.id,{contact_id:r._newContact,esito:'In Outbound',motivo:'Aggiunto ai contatti il '+fmtD(today())},{render:false});delete r._newContact});
+  fe.sel.clear();render();
+  toast(`${ok.length} ${ok.length===1?'azienda aggiunta':'aziende aggiunte'} ai contatti${skip?` · ${skip} saltate (senza email, scartate o già presenti)`:''}. Le trovi in Pianificazione: da lì generi le email come sempre.`,'ok');
+}
+
+/* ---- import ---- */
+const FE_HDR={nome:['azienda','ragione sociale','company','espositore','exhibitor','nome','name','ditta','brand','marchio'],sito:['sito','website','web','url','www','homepage','internet'],paese:['paese','country','nazione','nation','land','stato'],categoria:['categoria','category','settore','sector','prodotti','products','merceolog','padiglione','hall'],email:['email','e-mail','mail']};
+function feMapHeader(h){
+  const map={};const norm=x=>String(x||'').toLowerCase().trim();
+  for(const f in FE_HDR){for(let i=0;i<h.length;i++){if(Object.values(map).includes(i))continue;const v=norm(h[i]);if(FE_HDR[f].some(k=>v===k||v.includes(k))){map[f]=i;break}}}
+  return map;
+}
+function feParseRows(rows){
+  rows=rows.filter(r=>r&&r.some(x=>String(x??'').trim()));
+  if(!rows.length)return [];
+  let map=feMapHeader(rows[0]), body=rows.slice(1);
+  if(map.nome==null){map={nome:0,sito:1,paese:2,categoria:3};body=rows;}
+  const get=(r,k)=>map[k]==null?'':String(r[map[k]]??'').replace(/\s+/g,' ').trim();
+  const out=[],seen=new Set();
+  body.forEach(r=>{
+    const nome=get(r,'nome').slice(0,200);if(nome.length<2)return;
+    const k=nome.toLowerCase();if(seen.has(k))return;seen.add(k);
+    let sito=get(r,'sito');if(sito&&!/\./.test(sito))sito='';
+    const email=(get(r,'email').match(/[^\s,;<>]+@[^\s,;<>]+\.[a-z]{2,}/i)||[''])[0].toLowerCase();
+    out.push({nome,sito:feSito(sito)||null,paese:get(r,'paese').slice(0,60)||null,categoria:get(r,'categoria').slice(0,200)||null,email:email||null});
+  });
+  return out;
+}
+function feImportModal(){
+  const fiere=feFiere();
+  modal(`<div class="modal wide" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>Importa espositori</h3><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <div class="form-row"><label for="fe-imp-f">Fiera</label><input id="fe-imp-f" list="fe-fiere-list" value="${escAttr(fe.fiera||'')}" placeholder="es. Ambiente 2026"><datalist id="fe-fiere-list">${fiere.map(f=>`<option value="${escAttr(f.nome)}">`).join('')}</datalist></div>
+      <div class="form-row"><label>File CSV o Excel <span class="hint">(colonne riconosciute: azienda, sito, paese, categoria, email)</span></label><input id="fe-imp-file" type="file" accept=".csv,.xlsx,.xls,.txt" onchange="feImportFile(this.files[0])"></div>
+      <div class="form-row"><label for="fe-imp-t">…oppure incolla, un'azienda per riga <span class="hint">(nome; sito; paese; categoria — sito e il resto sono facoltativi)</span></label><textarea id="fe-imp-t" rows="9" placeholder="Rossi Pentole Srl; www.rossipentole.it; Italia; pentolame&#10;Bianchi Coltelli; bianchicoltelli.com; Italia"></textarea></div>
+      <p class="helptip">I doppioni nella stessa fiera vengono saltati. Le aziende entrano come «Da analizzare»: l'analisi la lanci tu dalla pagina.</p>
+      <div id="fe-imp-prev" class="email-cell"></div>
+    </div>
+    <div class="modal-f"><button class="btn primary" id="fe-imp-go" onclick="feImportSave()">Importa</button></div>
+  </div>`);
+}
+let _feFileRows=null;
+function feImportFile(file){
+  _feFileRows=null;if(!file)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      let best=null;
+      wb.SheetNames.forEach(n=>{const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,blankrows:false});if(!best||rows.length>best.length)best=rows});
+      _feFileRows=feParseRows(best||[]);
+      const p=document.getElementById('fe-imp-prev');
+      if(p)p.textContent=_feFileRows.length?`Trovate ${_feFileRows.length} aziende nel file, per esempio: ${_feFileRows.slice(0,3).map(x=>x.nome).join(', ')}`:'Nel file non trovo una colonna con i nomi delle aziende.';
+    }catch(err){toast('Non riesco a leggere il file: '+err.message,'err')}
+  };
+  rd.readAsArrayBuffer(file);
+}
+async function feImportSave(){
+  const fiera=(document.getElementById('fe-imp-f')?.value||'').trim().slice(0,120);
+  if(!fiera){toast('Scrivi il nome della fiera','warn');return}
+  let rows=_feFileRows||[];
+  const t=(document.getElementById('fe-imp-t')?.value||'').trim();
+  if(t){const lines=t.split(/\r?\n/).map(l=>l.split(/\t|;/).map(x=>x.trim()));rows=rows.concat(feParseRows(lines.length&&FE_HDR.nome.some(k=>String(lines[0][0]||'').toLowerCase().includes(k))?lines:[['nome','sito','paese','categoria'],...lines]));}
+  const seen=new Set();rows=rows.filter(r=>{const k=r.nome.toLowerCase();if(seen.has(k))return false;seen.add(k);return true});
+  if(!rows.length){toast('Carica un file o incolla almeno un\'azienda','warn');return}
+  const b=document.getElementById('fe-imp-go');if(b){b.disabled=true;b.innerHTML='<span class="spinner"></span> Importo…'}
+  try{
+    for(let i=0;i<rows.length;i+=500){
+      const {error}=await sb.from('fiere_espositori').upsert(rows.slice(i,i+500).map(r=>({fiera,...r})),{onConflict:'fiera,nome_key',ignoreDuplicates:true});
+      if(error)throw error;
+    }
+    _feFileRows=null;closeModal();fe.fiera=fiera;fe.esito='tutti';
+    await feLoad({silent:true});
+    toast(`${rows.length} aziende importate in ${fiera} (i doppioni sono stati saltati)`,'ok');
+  }catch(e){toast('Importazione non riuscita: '+e.message,'err');if(b){b.disabled=false;b.textContent='Importa'}}
+}
+
+/* ---- criteri ---- */
+function feCriteriModal(){
+  const c=feCfg();
+  modal(`<div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>Criteri di selezione</h3><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <p class="helptip">Le aziende con marchio noto al grande pubblico vengono sempre scartate. Il fatturato decide il resto.</p>
+      <div class="two-col">
+        <div class="form-row"><label for="fe-c-min">Fatturato minimo (€)</label><input id="fe-c-min" type="number" min="0" step="10000" value="${c.min}"></div>
+        <div class="form-row"><label for="fe-c-max">Fatturato massimo (€)</label><input id="fe-c-max" type="number" min="0" step="100000" value="${c.max}"></div>
+      </div>
+      <div class="form-row"><label for="fe-c-nd">Se il fatturato non si trova</label><select id="fe-c-nd"><option value="verifica"${c.fattND==='verifica'?' selected':''}>Da verificare a mano</option><option value="tieni"${c.fattND==='tieni'?' selected':''}>Idoneo lo stesso, se c'è l'email</option></select></div>
+      <div class="two-col">
+        <div class="form-row"><label for="fe-c-set">Settore dei contatti in Outbound</label><input id="fe-c-set" value="${escAttr(c.settore)}"></div>
+        <div class="form-row"><label for="fe-c-conc">Analisi in parallelo</label><select id="fe-c-conc">${[1,2,3].map(n=>`<option${+c.concorrenza===n?' selected':''}>${n}</option>`).join('')}</select></div>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn primary" onclick="feCriteriSave()">Salva e ricalcola gli esiti</button></div>
+  </div>`);
+}
+function feCriteriSave(){
+  const c=feCfg(),v=id=>document.getElementById(id)?.value;
+  const mi=Math.max(0,+v('fe-c-min')||0),ma=Math.max(0,+v('fe-c-max')||0);
+  if(ma&&mi>ma){toast('Il minimo deve stare sotto il massimo','warn');return}
+  c.min=mi;c.max=ma||5000000;c.fattND=v('fe-c-nd')||'verifica';c.settore=(v('fe-c-set')||'').trim()||'Casa e cucina';c.concorrenza=+v('fe-c-conc')||2;
+  save(LS.config,state.config);closeModal();feRivaluta();
+}
+
+/* ---- viste ---- */
+function feEsitoChip(e){
+  const k={'Da analizzare':'da','Idoneo':'reply','Da verificare':'wait','Scartato':'stop','In Outbound':'seq'}[e]||'da';
+  return `<span class="chip ${k}"><span class="d"></span>${esc(e)}</span>`;
+}
+function feHeroCopy(){
+  if(!auth.session||!auth.allowed)return {t:'Fiere.',l:'Accedi per importare gli espositori e analizzarli.'};
+  if(!fe.loaded)return {t:'Fiere.',l:fe.err?'Non riesco a leggere gli espositori.':'Carico gli espositori…'};
+  if(fe.running&&fe.prog)return {t:`Analizzo ${fe.prog.done} di ${fe.prog.tot}.`,l:`Ultima: ${fe.prog.last||'—'} · ${fe.searches} ricerche web finora. Puoi restare su questa pagina o fermare l'analisi.`};
+  if(!fe.rows.length)return {t:'Dalla fiera alla prima email.',l:'Importa la lista espositori di una fiera: Claude trova email, descrizione e fatturato, scarta i marchi famosi e chi è fuori fascia, e gli idonei passano a Outbound.'};
+  const vis=fe.rows.filter(r=>!fe.fiera||r.fiera===fe.fiera), ok=vis.filter(r=>r.esito==='Idoneo').length, da=vis.filter(r=>r.esito==='Da analizzare').length;
+  return {t:ok?`${ok} ${ok===1?'azienda idonea':'aziende idonee'} da passare a Outbound.`:da?`${da} aziende da analizzare.`:'Nessuna azienda in attesa.',l:`${fe.fiera||'Tutte le fiere'} · fascia di fatturato ${feEuro(feCfg().min)} – ${feEuro(feCfg().max)}, marchi famosi esclusi`};
+}
+function feTopActions(){
+  if(!auth.session||!auth.allowed)return '';
+  return `<button class="btn" onclick="feImportModal()">${LD_I.plus}<span class="lbl">Importa espositori</span></button>
+    <button class="btn" onclick="feCriteriModal()"><span class="lbl">Criteri</span></button>
+    <button class="btn" onclick="feLoad()" title="Ricarica"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><span class="lbl">Aggiorna</span></button>`;
+}
+function feSet(k,v){fe[k]=v;if(k!=='q')fe.sel.clear();render()}
+function feSearch(v){fe.q=v;clearTimeout(window._feq);window._feq=setTimeout(()=>{render();const i=document.getElementById('fe-q');if(i){i.focus();i.setSelectionRange(v.length,v.length)}},220)}
+function feToggle(id,on){id=String(id);on?fe.sel.add(id):fe.sel.delete(id);softRender()}
+function feToggleAll(on){feVisible().forEach(r=>on?fe.sel.add(String(r.id)):fe.sel.delete(String(r.id)));softRender()}
+function viewFiere(){
+  if(!auth.ready)return `<div class="empty"><span class="spinner"></span></div>`;
+  if(!auth.session)return authLoginView('fiere');
+  if(auth.allowed===null)return `<div class="empty"><span class="spinner"></span></div>`;
+  if(auth.allowed===false)return `<div class="empty"><h4>Questo account non è abilitato</h4></div>`;
+  if(!fe.loaded){
+    if(!fe.loading&&!fe.err)setTimeout(()=>feLoad(),0);
+    if(fe.err){const miss=/column|esito|does not exist|schema cache/i.test(fe.err);
+      return `<div class="empty"><h4>${miss?'Manca l\'aggiornamento del database':'Non riesco a leggere gli espositori'}</h4><p>${miss?'Nel SQL Editor di Supabase esegui una volta <code>supabase/fiere.sql</code>, poi ricarica.':esc(fe.err)}</p><button class="btn" onclick="fe.err='';feLoad()">Riprova</button></div>`;}
+    return `<div class="empty"><span class="spinner"></span><p style="margin-top:14px">Carico gli espositori…</p></div>`;
+  }
+  if(!fe.rows.length)return `<div class="empty"><h4>Nessun espositore ancora</h4><p>Scarica l'elenco espositori dal catalogo ufficiale della fiera (o un catalogo ICE delle aziende italiane), poi premi «Importa espositori». Basta il nome dell'azienda; il sito aiuta.</p><button class="btn primary" onclick="feImportModal()">Importa espositori</button></div>`;
+  const fiere=feFiere(), vis=feVisible(), shown=vis.slice(0,500);
+  const cnt=e=>fe.rows.filter(r=>(!fe.fiera||r.fiera===fe.fiera)&&(!fe.soloIt||feIsIt(r))&&r.esito===e).length;
+  const da=vis.filter(r=>r.esito==='Da analizzare').length;
+  const selIds=[...fe.sel].filter(id=>vis.some(r=>String(r.id)===id));
+  const selOk=selIds.map(feById).filter(r=>r&&r.email&&r.esito!=='Scartato'&&r.esito!=='In Outbound').length;
+  const idonei=vis.filter(r=>r.esito==='Idoneo'&&r.email).map(r=>String(r.id));
+  const allSel=shown.length&&shown.every(r=>fe.sel.has(String(r.id)));
+  const p=fe.prog;
+  return `<div class="filters">
+      <div class="form-row ld-which"><select aria-label="Fiera" onchange="feSet('fiera',this.value)"><option value="">Tutte le fiere (${fe.rows.length})</option>${fiere.map(f=>`<option value="${escAttr(f.nome)}"${fe.fiera===f.nome?' selected':''}>${esc(f.nome)} (${f.n})</option>`).join('')}</select></div>
+      <div class="seg" role="group" aria-label="Esito">${[['tutti','Tutti'],...FE_ESITI.map(e=>[e,`${e} (${cnt(e)})`])].map(([k,l])=>`<button class="fbtn ${fe.esito===k?'on':''}" aria-pressed="${fe.esito===k}" onclick="feSet('esito','${escAttr(k)}')">${esc(l)}</button>`).join('')}</div>
+    </div>
+    <div class="filters">
+      <div class="search">${LD_I.search.replace('class="ico"','class="ico" style="width:17px;height:17px;color:var(--faint)"')}<input id="fe-q" placeholder="Cerca azienda, email, categoria…" value="${escAttr(fe.q)}" oninput="feSearch(this.value)" aria-label="Cerca tra gli espositori"></div>
+      <label class="fe-chk"><input type="checkbox" ${fe.soloIt?'checked':''} onchange="feSet('soloIt',this.checked)"> Solo aziende italiane</label>
+    </div>
+    <div class="fe-bar">
+      <button class="btn ${fe.running?'':'primary'}" onclick="feRun()" ${!fe.running&&!da?'disabled':''}>${fe.running?'Ferma l\'analisi':`${LD_I.search}Analizza ${da} da analizzare`}</button>
+      ${selIds.length?`<button class="btn" onclick="feRun([...fe.sel])" ${fe.running?'disabled':''}>Analizza i ${selIds.length} selezionati</button>`:''}
+      <button class="btn" onclick="feToOutbound(${selIds.length?'[...fe.sel]':JSON.stringify(idonei).replace(/"/g,'&quot;')})" ${(selIds.length?selOk:idonei.length)?'':'disabled'}>Aggiungi ${selIds.length?selOk+' selezionati':idonei.length+' idonei'} a Outbound</button>
+      ${p?`<span class="fe-prog"><span class="spinner"></span> ${p.done}/${p.tot} · ${esc(p.last||'')}${p.err?` · ${p.err} errori`:''}</span>`:''}
+    </div>
+    ${shown.length?`<div class="table-wrap"><table class="fe-table"><thead><tr><th style="width:34px"><input type="checkbox" aria-label="Seleziona tutti" ${allSel?'checked':''} onchange="feToggleAll(this.checked)"></th><th>Azienda</th><th>Esito</th><th>Email</th><th>Fatturato</th><th>Amazon</th><th>Descrizione</th></tr></thead><tbody>
+    ${shown.map(r=>`<tr class="pa-row">
+      <td onclick="event.stopPropagation()"><input type="checkbox" aria-label="Seleziona ${escAttr(r.nome)}" ${fe.sel.has(String(r.id))?'checked':''} onchange="feToggle('${r.id}',this.checked)"></td>
+      <td class="az" onclick="feOpen('${r.id}')"><div>${esc(r.nome)}</div><div class="ld-sub">${esc([r.categoria,r.paese,!fe.fiera?r.fiera:''].filter(Boolean).join(' · ')||'—')}</div></td>
+      <td onclick="feOpen('${r.id}')">${feEsitoChip(r.esito)}${r.motivo?`<div class="ld-sub">${esc(r.motivo.slice(0,70))}</div>`:''}</td>
+      <td class="email-cell" onclick="feOpen('${r.id}')">${esc(r.email||'—')}${(r.emails||[]).length>1?` <span class="ld-sub">+${r.emails.length-1}</span>`:''}</td>
+      <td class="tnum" onclick="feOpen('${r.id}')">${feEuro(r.fatturato)}${r.fatturato_anno?`<div class="ld-sub">${r.fatturato_anno}</div>`:''}</td>
+      <td onclick="feOpen('${r.id}')">${r.amazon==='si'?'Sì':r.amazon==='no'?'No':'—'}</td>
+      <td class="email-cell fe-desc" onclick="feOpen('${r.id}')">${esc((r.descrizione||'').slice(0,140))}${(r.descrizione||'').length>140?'…':''}</td>
+    </tr>`).join('')}
+    </tbody></table></div>${vis.length>500?`<p class="helptip" style="margin-top:10px">Mostro le prime 500 di ${vis.length}: usa la ricerca o i filtri.</p>`:''}`
+    :`<div class="empty"><h4>Nessuna azienda con questi filtri</h4><p>${fe.soloIt?'Prova a togliere «Solo aziende italiane».':'Prova a cambiare filtro.'}</p></div>`}
+    <p class="helptip" style="margin-top:12px">Ogni analisi usa la tua chiave Anthropic con la ricerca web: qualche ricerca e la lettura di poche pagine per azienda. Fatturato e notorietà vengono da fonti pubbliche: controlla gli idonei prima di passarli a Outbound.</p>`;
+}
+function feOpen(id,keepScroll){
+  const r=feById(id);if(!r)return;
+  const prev=keepScroll?document.querySelector('#modalRoot .modal')?.scrollTop:0;
+  const inp=(f,l,ph)=>`<div class="form-row"><label>${l}</label><input value="${escAttr(f==='fatturato'&&r[f]!=null?(+r[f]).toLocaleString('it-IT'):(r[f]??''))}" placeholder="${escAttr(ph||'')}" onchange="feF('${id}','${f}',this.value)"></div>`;
+  const err=r.data&&r.data.errore_analisi;
+  modal(`<div class="modal wide fe-modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>${esc(r.nome)}</h3>${feEsitoChip(r.esito)}<div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
+    <div class="modal-b">
+      <p class="email-cell">${esc(r.fiera)}${r.categoria?' · '+esc(r.categoria):''}${r.paese?' · '+esc(r.paese):''} · ${r.analizzato_il?'analizzata il '+esc(fmtTs(r.analizzato_il)):'non ancora analizzata'}${r.motivo?' · '+esc(r.motivo):''}</p>
+      ${err?`<p class="helptip" style="color:var(--danger,#b3261e)">Ultima analisi non riuscita: ${esc(err)}</p>`:''}
+      <div class="two-col">
+        <div class="form-row"><label>Esito</label><select onchange="feEsitoSet('${id}',this.value)">${FE_ESITI.map(e=>`<option${r.esito===e?' selected':''}>${esc(e)}</option>`).join('')}</select></div>
+        <div class="form-row"><label>Motivo</label><input value="${escAttr(r.motivo||'')}" onchange="feF('${id}','motivo',this.value)"></div>
+        ${inp('ragione_sociale','Ragione sociale')}
+        <div class="form-row"><label>Sito</label><input value="${escAttr(r.sito||'')}" onchange="feF('${id}','sito',this.value)">${r.sito?`<a class="email-cell" href="${escAttr(r.sito)}" target="_blank" rel="noopener noreferrer">Apri il sito</a>`:''}</div>
+        <div class="form-row"><label>Email per Outbound</label><input type="email" value="${escAttr(r.email||'')}" onchange="feF('${id}','email',this.value)">${(r.emails||[]).length>1?`<span class="email-cell">Altre trovate: ${r.emails.filter(e=>e!==r.email).map(esc).join(', ')}</span>`:''}</div>
+        ${inp('telefono','Telefono')}
+        ${inp('fatturato','Fatturato (€)','es. 1.800.000')}
+        ${inp('fatturato_anno','Anno del bilancio')}
+        <div class="form-row"><label>Fonte del fatturato</label><input value="${escAttr(r.fatturato_fonte||'')}" onchange="feF('${id}','fatturato_fonte',this.value)">${/^https?:/.test(r.fatturato_fonte||'')?`<a class="email-cell" href="${escAttr(r.fatturato_fonte)}" target="_blank" rel="noopener noreferrer">Apri la fonte</a>`:''}</div>
+        ${inp('dipendenti','Dipendenti')}
+        <div class="form-row"><label>Marchio famoso</label><select onchange="feF('${id}','famosa',this.value)"><option value=""${r.famosa==null?' selected':''}>—</option><option value="no"${r.famosa===false?' selected':''}>No</option><option value="si"${r.famosa===true?' selected':''}>Sì (scartato)</option></select>${r.famosa_motivo?`<span class="email-cell">${esc(r.famosa_motivo)}</span>`:''}</div>
+        <div class="form-row"><label>Su Amazon.it</label><select onchange="feF('${id}','amazon',this.value)">${[['nd','Non verificato'],['si','Sì, vende già'],['no','No']].map(([k,l])=>`<option value="${k}"${(r.amazon||'nd')===k?' selected':''}>${l}</option>`).join('')}</select></div>
+      </div>
+      <div class="form-row"><label>Descrizione <span class="hint">(la usa Outbound per scrivere l'email)</span></label><textarea rows="4" onchange="feF('${id}','descrizione',this.value)">${esc(r.descrizione||'')}</textarea></div>
+      <div class="form-row"><label>Note</label><textarea rows="2" onchange="feF('${id}','note',this.value)">${esc(r.note||'')}</textarea></div>
+    </div>
+    <div class="modal-f" style="justify-content:space-between">
+      <button class="btn sm ghost danger" onclick="feDelete('${id}')">Elimina</button>
+      <span style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn" onclick="closeModal();feRun(['${id}'])" ${fe.running?'disabled':''}>${r.analizzato_il?'Rianalizza':'Analizza'}</button>
+        ${r.contact_id?`<button class="btn" onclick="closeModal();openContact('${r.contact_id}')">Apri il contatto</button>`:`<button class="btn primary" onclick="closeModal();feToOutbound(['${id}'])" ${r.email&&r.esito!=='Scartato'?'':'disabled'}>Aggiungi a Outbound</button>`}
+      </span>
+    </div>
+  </div>`);
+  if(keepScroll){const b=document.querySelector('#modalRoot .modal');if(b)b.scrollTop=prev||0;}
+}
+function feF(id,f,v){
+  const r=feById(id);if(!r)return;
+  let val=typeof v==='string'?v.trim():v;
+  if(['fatturato','fatturato_anno','dipendenti'].includes(f)){const n=String(val).replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,'');val=n===''?null:Math.round(+n);}
+  else if(f==='famosa')val=v==='si'?true:v==='no'?false:null;
+  else if(f==='sito')val=feSito(val)||null;
+  else if(f==='email'){val=String(val).toLowerCase();if(val&&!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(val)){toast('Email non valida','warn');return}val=val||null;}
+  else if(val==='')val=null;
+  const patch={[f]:val};
+  if(['fatturato','famosa','email'].includes(f)&&r.analizzato_il&&!r.esito_manuale&&r.esito!=='In Outbound')Object.assign(patch,feValuta({...r,...patch}));
+  feSave(id,patch,{reopen:['fatturato','famosa','email','sito','fatturato_fonte'].includes(f),render:false});
+}
+function feEsitoSet(id,v){feSave(id,{esito:v,esito_manuale:true,motivo:'Scelto a mano'},{reopen:true,render:false})}
+async function feDelete(id){
+  const r=feById(id);if(!r||!confirm(`Eliminare ${r.nome} dagli espositori di ${r.fiera}?`))return;
+  const {error}=await sb.from('fiere_espositori').delete().eq('id',r.id);
+  if(error){toast('Non eliminato: '+error.message,'err');return}
+  fe.rows=fe.rows.filter(x=>x!==r);fe.sel.delete(String(id));closeModal();render();
 }
 
 /* =======================================================

@@ -47,6 +47,16 @@ Pagina «Prospect Amazon» per il flusso di acquisizione clienti: brand trovati 
    - Volumi bassi: Amazon non ama le letture automatiche e può chiedere il captcha. L'estensione si ferma da sola.
 3. **Nell'app**: «Soglie e testi» per fasce, punteggio minimo, nome nei messaggi, testi della sequenza e casi studio. «Fiere» per caricare gli elenchi espositori. L'analisi usa la chiave Anthropic già inserita nelle Impostazioni. «Passa l'email a Outbound» crea il contatto con l'email già scritta, pianificata al giorno 5 della sequenza: da lì invio, follow-up e risposte sono quelli di Outbound.
 
+## Fiere
+
+Pagina «Fiere»: dalla lista espositori di una fiera alle email in Outbound.
+
+1. **Database.** Esegui una volta `supabase/fiere.sql` (dopo `prospects.sql`): aggiunge a `fiere_espositori` le colonne dell'analisi.
+2. **Importa espositori**: file CSV o Excel (colonne riconosciute: azienda, sito, paese, categoria, email) oppure incolla una riga per azienda.
+3. **Analizza**: per ogni azienda Claude usa la ricerca web e la lettura delle pagine (chiave Anthropic delle Impostazioni) per trovare sito, email aziendali (niente PEC, niente indirizzi inventati), descrizione, fatturato con anno e fonte, dipendenti, notorietà del marchio e presenza su Amazon.it. La ricerca web va attivata una volta nella Console Anthropic dall'amministratore dell'organizzazione.
+4. **Esiti automatici** (modificabili in «Criteri»): marchio famoso = Scartato; fatturato fuori dalla fascia (predefinita 100.000 € – 5 M€) = Scartato; senza email o senza fatturato = Da verificare; il resto = Idoneo. Ogni esito si può cambiare a mano.
+5. **Aggiungi a Outbound**: gli idonei diventano contatti con la descrizione già pronta e finiscono in Pianificazione, da dove generi le email come sempre.
+
 ## Dove pubblicarlo
 
 Il file contiene l'indirizzo e la chiave pubblica di Supabase: sono pensati per stare nel browser e i dati sono protetti dal login e dalle regole del database (`ob_users`), ma non c'è motivo di renderli pubblici. Meglio un repository **privato** e un hosting con accesso limitato, oppure aprire il file in locale.
@@ -61,4 +71,5 @@ Home, Newsletter, Richieste, Contabilità, Calendario, Password, Messaggi, Bache
 - `supabase/setup.sql`: tabelle, regole di accesso, statistiche
 - `supabase/functions/ob-track/index.ts`: conteggio anonimo di aperture e clic
 - `supabase/prospects.sql`: tabelle dei Prospect Amazon
+- `supabase/fiere.sql`: colonne di analisi degli espositori delle fiere
 - `extension/`: estensione Chrome «Callforus Prospect»
