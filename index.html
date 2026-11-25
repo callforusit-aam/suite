@@ -4363,7 +4363,7 @@ async function feAnalyzeOne(r){
   const patch={
     sito:sito||null, ragione_sociale:String(o.ragione_sociale||r.ragione_sociale||'').slice(0,200)||null,
     emails, email:emails[0]||null, telefono:String(o.telefono||'').slice(0,60)||r.telefono||null,
-    descrizione:String(o.descrizione||'').slice(0,900)||null,
+    descrizione:String(o.descrizione||r.descrizione||'').slice(0,900)||null,
     fatturato:num(o.fatturato), fatturato_anno:num(o.fatturato_anno), fatturato_fonte:String(o.fatturato_fonte||'').slice(0,400)||null,
     dipendenti:num(o.dipendenti), famosa:o.famosa===true, famosa_motivo:String(o.famosa_motivo||'').slice(0,300)||null,
     amazon:['si','no','nd'].includes(o.amazon)?o.amazon:'nd',
@@ -4425,7 +4425,7 @@ function feToOutbound(ids){
 }
 
 /* ---- import ---- */
-const FE_HDR={nome:['azienda','ragione sociale','company','espositore','exhibitor','nome','name','ditta','brand','marchio'],sito:['sito','website','web','url','www','homepage','internet'],paese:['paese','country','nazione','nation','land','stato'],categoria:['categoria','category','settore','sector','prodotti','products','merceolog','padiglione','hall'],email:['email','e-mail','mail']};
+const FE_HDR={nome:['azienda','ragione sociale','company','espositore','exhibitor','nome','name','ditta','brand','marchio'],sito:['sito','website','web','url','www','homepage','internet'],paese:['paese','country','nazione','nation','land','stato'],categoria:['categoria','category','settore','sector','prodotti','products','merceolog'],email:['email','e-mail','mail'],telefono:['telefono','phone','tel'],descrizione:['descrizione','description','profilo','about','attività']};
 function feMapHeader(h){
   const map={};const norm=x=>String(x||'').toLowerCase().trim();
   for(const f in FE_HDR){for(let i=0;i<h.length;i++){if(Object.values(map).includes(i))continue;const v=norm(h[i]);if(FE_HDR[f].some(k=>v===k||v.includes(k))){map[f]=i;break}}}
@@ -4443,7 +4443,7 @@ function feParseRows(rows){
     const k=nome.toLowerCase();if(seen.has(k))return;seen.add(k);
     let sito=get(r,'sito');if(sito&&!/\./.test(sito))sito='';
     const email=(get(r,'email').match(/[^\s,;<>]+@[^\s,;<>]+\.[a-z]{2,}/i)||[''])[0].toLowerCase();
-    out.push({nome,sito:feSito(sito)||null,paese:get(r,'paese').slice(0,60)||null,categoria:get(r,'categoria').slice(0,200)||null,email:email||null});
+    out.push({nome,sito:feSito(sito)||null,paese:get(r,'paese').slice(0,60)||null,categoria:get(r,'categoria').slice(0,200)||null,email:email||null,emails:email?[email]:[],telefono:get(r,'telefono').slice(0,60)||null,descrizione:get(r,'descrizione').slice(0,900)||null});
   });
   return out;
 }
@@ -4453,7 +4453,7 @@ function feImportModal(){
     <div class="modal-h"><h3>Importa espositori</h3><div class="x" role="button" tabindex="0" aria-label="Chiudi" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></div></div>
     <div class="modal-b">
       <div class="form-row"><label for="fe-imp-f">Fiera</label><input id="fe-imp-f" list="fe-fiere-list" value="${escAttr(fe.fiera||'')}" placeholder="es. Ambiente 2026"><datalist id="fe-fiere-list">${fiere.map(f=>`<option value="${escAttr(f.nome)}">`).join('')}</datalist></div>
-      <div class="form-row"><label>File CSV o Excel <span class="hint">(colonne riconosciute: azienda, sito, paese, categoria, email)</span></label><input id="fe-imp-file" type="file" accept=".csv,.xlsx,.xls,.txt" onchange="feImportFile(this.files[0])"></div>
+      <div class="form-row"><label>File CSV o Excel <span class="hint">(colonne riconosciute: azienda, sito, paese, categoria, email, telefono, descrizione)</span></label><input id="fe-imp-file" type="file" accept=".csv,.xlsx,.xls,.txt" onchange="feImportFile(this.files[0])"></div>
       <div class="form-row"><label for="fe-imp-t">…oppure incolla, un'azienda per riga <span class="hint">(nome; sito; paese; categoria — sito e il resto sono facoltativi)</span></label><textarea id="fe-imp-t" rows="9" placeholder="Rossi Pentole Srl; www.rossipentole.it; Italia; pentolame&#10;Bianchi Coltelli; bianchicoltelli.com; Italia"></textarea></div>
       <p class="helptip">I doppioni nella stessa fiera vengono saltati. Le aziende entrano come «Da analizzare»: l'analisi la lanci tu dalla pagina.</p>
       <div id="fe-imp-prev" class="email-cell"></div>
@@ -4467,7 +4467,7 @@ function feImportFile(file){
   const rd=new FileReader();
   rd.onload=e=>{
     try{
-      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',raw:/\.(csv|txt)$/i.test(file.name)});
       let best=null;
       wb.SheetNames.forEach(n=>{const rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,blankrows:false});if(!best||rows.length>best.length)best=rows});
       _feFileRows=feParseRows(best||[]);
